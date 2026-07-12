@@ -79,6 +79,15 @@
   .zoom button{border:0;background:transparent;color:var(--ink);width:34px;height:34px;cursor:pointer;font-size:16px;line-height:1}
   .zoom button:hover{background:var(--surface-2)}
   .zoom span{display:inline-flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--ink-soft);border-left:1px solid var(--border);border-right:1px solid var(--border);font-variant-numeric:tabular-nums}
+  .fstat{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);padding:0 4px;white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis}
+  .fstat.act{color:var(--ink)}
+  .fstat b{color:var(--accent);font-weight:600}
+  .fstat .sub{color:var(--ink-faint)}
+  .dotst{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-faint)}
+  .dotst.ok{background:#2fa46b}
+  .dotst.warn{background:#c9821c}
+  .dotst.err{background:#d5405a}
+  .tbsep{width:1px;height:22px;background:var(--border);margin:0 1px}
 
   .legend{display:flex;flex-wrap:wrap;gap:6px 15px;align-items:center;margin:2px 0 14px;
     padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px}
@@ -263,15 +272,18 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8.4 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8.4a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         設定
       </button>
+      <button class="btn ghost" id="openBtn" title="JSONファイルを開いて接続。以降そのファイルへ毎回自動保存します">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        JSONを開く
+      </button>
+      <button class="btn ghost" id="saveAsBtn" title="保存先のJSONを新規作成／変更（以降そこへ自動保存）">保存先…</button>
+      <span class="fstat" id="fileStatus"></span>
+      <span class="tbsep"></span>
       <button class="btn ghost" id="exportBtn" title="Excelで開けるCSVを書き出し">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v11m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
         Excel書出
       </button>
-      <button class="btn ghost" id="importBtn" title="Excel(CSV) / JSON を読み込み">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14V3m0 0-4 4m4-4 4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-        読込
-      </button>
-      <button class="btn ghost" id="jsonBtn" title="JSON（ロスレス・バックアップ用）で書き出し">JSON</button>
+      <button class="btn ghost" id="importBtn" title="Excel(CSV) / JSON を1回だけ読み込み（接続はしない）">読込</button>
       <button class="btn primary" id="addBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
         培養を追加
@@ -457,15 +469,10 @@
   var LABELW=210, HH=54, ROWH=84, GROUPH=32;
 
   function uid(){return 'r'+Math.random().toString(36).slice(2,9)+(state.records.length);}
-  function load(){
-    try{
-      var raw=localStorage.getItem(KEY);
-      if(raw){state=JSON.parse(raw);}
-    }catch(e){state={};}
+  function normalizeState(){
     if(!state.records)state.records=[];
     if(!state.settings)state.settings=defaultSettings();
     ['cells','media','reagents','genes','uses'].forEach(function(k){if(!Array.isArray(state.settings[k]))state.settings[k]=defaultSettings()[k];});
-    if(!state.records.length)state.records=sampleData();
     var FATEMAP={passage:'継代',isogen:'ISOGEN回収',freeze:'凍結ストック',dna:'DNA抽出',other:'その他/回収'};
     state.records.forEach(function(r){
       if(r.seedMode===undefined){applyConc(r,r.conc||'');}
@@ -477,7 +484,24 @@
     });
     mergeSettingsFromRecords();
   }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  function load(){
+    try{var raw=localStorage.getItem(KEY);if(raw){state=JSON.parse(raw);}}catch(e){state={};}
+    if(!state.records)state.records=[];
+    if(!state.settings)state.settings=defaultSettings();
+    if(!state.records.length)state.records=sampleData();
+    normalizeState();
+  }
+  function persistLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+  function save(){persistLocal();if(fileHandle){setFileStatus('saving');flushFile();}}
+  // データを外部JSONの内容で置き換える（ファイルを開いた/JSON読込時）
+  function applyLoadedState(obj){
+    var recs=Array.isArray(obj)?obj:(obj&&obj.records);
+    if(!Array.isArray(recs))throw new Error('bad json');
+    state={records:recs,settings:(obj&&obj.settings)?obj.settings:state.settings};
+    normalizeState();persistLocal();
+    renderLegend();render();
+    if(scrim.classList.contains('open'))fillFormSelects();
+  }
 
   function d2t(s){return new Date(s+'T00:00:00').getTime();}
   function t2s(t){var d=new Date(t);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
@@ -993,7 +1017,7 @@
       recs.push(rec);
     }
     if(!recs.length)throw new Error('empty');
-    state.records=recs;mergeSettingsFromRecords();save();render();
+    state.records=recs;mergeSettingsFromRecords();save();renderLegend();render();
   }
   document.getElementById('fileInput').addEventListener('change',function(e){
     var file=e.target.files[0];if(!file)return;var rd=new FileReader();
@@ -1001,17 +1025,85 @@
       var txt=''+rd.result,name=(file.name||'').toLowerCase();
       var looksJSON=name.slice(-5)==='.json'||/^\s*[\{\[]/.test(txt);
       try{
-        if(looksJSON){
-          var obj=JSON.parse(txt);
-          if(obj&&obj.settings)state.settings=obj.settings;
-          var arr=Array.isArray(obj)?obj:obj.records;
-          if(!Array.isArray(arr))throw new Error('json');
-          state.records=arr;mergeSettingsFromRecords();save();render();
-        }else importCSV(txt);
+        if(looksJSON){applyLoadedState(JSON.parse(txt));}
+        else importCSV(txt);
       }catch(err){alert('読み込めませんでした。\nExcelで編集した場合は「CSV UTF-8」形式で保存し、列見出しの行を残してください。');}
     };
     rd.readAsText(file);e.target.value='';
   });
+
+  // ---------- JSON ファイル接続（File System Access API・毎回そのJSONへ自動保存）----------
+  var fileHandle=null, connectedName='', writing=false, pendingWrite=false;
+  var supportsFS=('showSaveFilePicker' in window)&&('showOpenFilePicker' in window);
+  function setFileStatus(kind){
+    var el=document.getElementById('fileStatus'); if(!el)return;
+    el.onclick=null; el.style.cursor='default'; el.classList.remove('act');
+    if(kind==='reconnect'){
+      el.innerHTML='<span class="dotst warn"></span>'+esc(connectedName)+' <b>接続</b>';
+      el.classList.add('act'); el.style.cursor='pointer'; el.onclick=reconnect; return;
+    }
+    if(!fileHandle){
+      el.innerHTML='<span class="dotst off"></span>未接続 <span class="sub">(ブラウザ内保存)</span>'; return;
+    }
+    el.classList.add('act');
+    var map={saving:['dotst warn','保存中…'],saved:['dotst ok','自動保存'],error:['dotst err','保存失敗']};
+    var m=map[kind]||map.saved;
+    el.innerHTML='<span class="'+m[0]+'"></span>'+esc(connectedName)+' <span class="sub">· '+m[1]+'</span>';
+  }
+  function flushFile(){
+    if(!fileHandle)return;
+    if(writing){pendingWrite=true;return;}
+    writing=true;
+    fileHandle.createWritable().then(function(w){
+      return w.write(JSON.stringify(state,null,2)).then(function(){return w.close();});
+    }).then(function(){setFileStatus('saved');}).catch(function(){setFileStatus('error');})
+    .then(function(){writing=false;if(pendingWrite){pendingWrite=false;flushFile();}});
+  }
+  function openJsonFile(){
+    if(!supportsFS){document.getElementById('fileInput').click();return;}
+    window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]}).then(function(hs){
+      var h=hs[0];
+      return h.getFile().then(function(f){return f.text();}).then(function(txt){
+        applyLoadedState(JSON.parse(txt));
+        fileHandle=h; connectedName=h.name; setFileStatus('saved');
+        return idbSet('handle',h);
+      });
+    }).catch(function(e){if(e&&e.name==='AbortError')return; document.getElementById('fileInput').click();});
+  }
+  function saveAsJsonFile(){
+    if(!supportsFS){exportJSON();return;}
+    window.showSaveFilePicker({suggestedName:'cell-passages.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]}).then(function(h){
+      fileHandle=h; connectedName=h.name; setFileStatus('saving');
+      return idbSet('handle',h).then(function(){flushFile();});
+    }).catch(function(e){if(e&&e.name==='AbortError')return;
+      alert('この環境では自動保存先を設定できませんでした（ローカルの file:// では制限される場合があります）。\nかわりにJSONを書き出します。GitHub Pages 等の https で開くと自動保存が使えます。');
+      exportJSON();});
+  }
+  function reconnect(){
+    if(!fileHandle)return;
+    fileHandle.requestPermission({mode:'readwrite'}).then(function(p){
+      if(p!=='granted')return;
+      return fileHandle.getFile().then(function(f){return f.text();}).then(function(txt){
+        applyLoadedState(JSON.parse(txt)); setFileStatus('saved');
+      });
+    }).catch(function(){setFileStatus('reconnect');});
+  }
+  function restoreHandle(){
+    if(!supportsFS)return;
+    idbGet('handle').then(function(h){
+      if(!h)return;
+      fileHandle=h; connectedName=h.name||'保存先';
+      return h.queryPermission({mode:'readwrite'}).then(function(perm){
+        if(perm==='granted'){
+          return h.getFile().then(function(f){return f.text();}).then(function(txt){applyLoadedState(JSON.parse(txt));setFileStatus('saved');});
+        }else{ setFileStatus('reconnect'); }
+      });
+    }).catch(function(){fileHandle=null;setFileStatus();});
+  }
+  function idbOpen(){return new Promise(function(res,rej){var o=indexedDB.open('cpm-store',1);o.onupgradeneeded=function(){o.result.createObjectStore('kv');};o.onsuccess=function(){res(o.result);};o.onerror=function(){rej(o.error);};});}
+  function idbSet(k,v){return idbOpen().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=function(){res();};tx.onerror=function(){rej(tx.error);};});});}
+  function idbGet(k){return idbOpen().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('kv','readonly');var rq=tx.objectStore('kv').get(k);rq.onsuccess=function(){res(rq.result);};rq.onerror=function(){rej(rq.error);};});});}
+  function disconnectFile(){fileHandle=null;connectedName='';idbSet('handle',null);setFileStatus();}
 
   // ---------- theme / zoom ----------
   function toggleTheme(){var cur=document.documentElement.getAttribute('data-theme');var isDark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',isDark?'light':'dark');}
@@ -1028,7 +1120,8 @@
   document.getElementById('setClose').onclick=closeSettings;
   document.getElementById('setDone').onclick=closeSettings;
   document.getElementById('exportBtn').onclick=exportCSV;
-  document.getElementById('jsonBtn').onclick=exportJSON;
+  document.getElementById('openBtn').onclick=openJsonFile;
+  document.getElementById('saveAsBtn').onclick=saveAsJsonFile;
   document.getElementById('importBtn').onclick=function(){document.getElementById('fileInput').click();};
   document.getElementById('themeBtn').onclick=toggleTheme;
   document.getElementById('zoomIn').onclick=function(){setZoom(8);};
@@ -1041,5 +1134,7 @@
   load();
   renderLegend();
   render();
+  setFileStatus();
+  restoreHandle();
 })();
 </script>
