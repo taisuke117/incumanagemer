@@ -112,8 +112,8 @@
   .today .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .today .cols.one{grid-template-columns:1fr}
   @media(max-width:640px){.today .cols{grid-template-columns:1fr}}
-  .tcol h3{margin:0 0 8px;font-size:11px;letter-spacing:.04em;color:var(--ink-faint);font-weight:660;display:flex;align-items:center;gap:7px}
-  .tcol h3 .tg{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff}
+  .tcol h3{margin:0 0 8px;font-size:12px;letter-spacing:.02em;color:var(--ink);font-weight:660;display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .tcol h3 .n{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-faint)}
   .titem{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);cursor:pointer;margin-bottom:6px;transition:.12s}
   .titem:hover{border-color:var(--ink-faint);background:var(--surface-3)}
   .titem .main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
@@ -761,14 +761,14 @@
     }
     var dow=DOW[new Date(d2t(t)).getDay()];
     var cols=[];
-    if(harvL.length)cols.push({title:'回収 / 処理',color:'#c9821c',n:harvL.length,html:harvL.map(function(r){return itemHTML(r,'harvest');}).join('')});
-    if(seedL.length)cols.push({title:'播種',color:'#2f7fd6',n:seedL.length,html:seedL.map(function(r){return itemHTML(r,'seed');}).join('')});
+    if(harvL.length)cols.push({title:'回収 / 処理',n:harvL.length,html:harvL.map(function(r){return itemHTML(r,'harvest');}).join('')});
+    if(seedL.length)cols.push({title:'播種',n:seedL.length,html:seedL.map(function(r){return itemHTML(r,'seed');}).join('')});
     var body;
     if(!cols.length){
       body='<div class="tempty" style="padding:8px 2px">本日の予定はありません。</div>';
     }else{
       body='<div class="cols'+(cols.length===1?' one':'')+'">'+cols.map(function(c){
-        return '<div class="tcol"><h3><span class="tg" style="background:'+c.color+'">'+c.title+'</span>'+c.n+' 件</h3>'+c.html+'</div>';
+        return '<div class="tcol"><h3>'+esc(c.title)+'<span class="n">'+c.n+' 件</span></h3>'+c.html+'</div>';
       }).join('')+'</div>';
     }
     var diff=Math.round((d2t(t)-d2t(todayStr()))/DAY);
