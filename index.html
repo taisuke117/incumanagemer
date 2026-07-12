@@ -103,6 +103,7 @@
   .today h2 .date{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-weight:500}
   .today h2 .cnt{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
   .today .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .today .cols.one{grid-template-columns:1fr}
   @media(max-width:640px){.today .cols{grid-template-columns:1fr}}
   .tcol h3{margin:0 0 8px;font-size:11px;letter-spacing:.04em;color:var(--ink-faint);font-weight:660;display:flex;align-items:center;gap:7px}
   .tcol h3 .tg{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff}
@@ -745,13 +746,18 @@
         +'<div class="r2">'+esc(r2)+'</div></div></div>';
     }
     var dow=DOW[new Date(d2t(t)).getDay()];
-    var harvHTML=harvL.length?harvL.map(function(r){return itemHTML(r,'harvest');}).join(''):'<div class="tempty">なし</div>';
-    var seedHTML=seedL.length?seedL.map(function(r){return itemHTML(r,'seed');}).join(''):'<div class="tempty">なし</div>';
-    el.innerHTML='<h2>📋 本日のタスク <span class="date">'+t+'（'+dow+'）</span><span class="cnt">'+total+' 件</span></h2>'
-      +'<div class="cols">'
-      +'<div class="tcol"><h3><span class="tg" style="background:#c9821c">回収 / 処理</span>'+harvL.length+' 件</h3>'+harvHTML+'</div>'
-      +'<div class="tcol"><h3><span class="tg" style="background:#2f7fd6">播種</span>'+seedL.length+' 件</h3>'+seedHTML+'</div>'
-      +'</div>';
+    var cols=[];
+    if(harvL.length)cols.push({title:'回収 / 処理',color:'#c9821c',n:harvL.length,html:harvL.map(function(r){return itemHTML(r,'harvest');}).join('')});
+    if(seedL.length)cols.push({title:'播種',color:'#2f7fd6',n:seedL.length,html:seedL.map(function(r){return itemHTML(r,'seed');}).join('')});
+    var body;
+    if(!cols.length){
+      body='<div class="tempty" style="padding:8px 2px">本日の予定はありません。</div>';
+    }else{
+      body='<div class="cols'+(cols.length===1?' one':'')+'">'+cols.map(function(c){
+        return '<div class="tcol"><h3><span class="tg" style="background:'+c.color+'">'+c.title+'</span>'+c.n+' 件</h3>'+c.html+'</div>';
+      }).join('')+'</div>';
+    }
+    el.innerHTML='<h2>📋 本日のタスク <span class="date">'+t+'（'+dow+'）</span><span class="cnt">'+total+' 件</span></h2>'+body;
     el.querySelectorAll('.titem').forEach(function(n){n.onclick=function(){openForm(n.getAttribute('data-id'));};});
   }
   function renderLegend(){
