@@ -100,8 +100,15 @@
 
   .today{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
   .today h2{margin:0 0 11px;font-size:14px;font-weight:660;display:flex;align-items:center;gap:9px}
-  .today h2 .date{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-weight:500}
+  .today h2 .ttl{font-weight:660}
+  .today h2 .date{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-weight:500;min-width:118px;text-align:center}
   .today h2 .cnt{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+  .today .tnav{display:inline-flex;align-items:center;gap:4px}
+  .today .tnav button{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);width:26px;height:24px;border-radius:7px;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+  .today .tnav button:hover{background:var(--surface-2);border-color:var(--ink-faint)}
+  .today .todaybtn{font-size:11px;padding:4px 10px;border:1px solid var(--border-strong);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-soft)}
+  .today .todaybtn:hover{background:var(--surface-2);color:var(--ink)}
+  .today .todaybtn.hide{display:none}
   .today .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .today .cols.one{grid-template-columns:1fr}
   @media(max-width:640px){.today .cols{grid-template-columns:1fr}}
@@ -479,6 +486,11 @@
       if(r.seedMode===undefined){applyConc(r,r.conc||'');}
       if(r.concExp===undefined)r.concExp=DEFAULT_EXP;
       if(r.dilution===undefined)r.dilution='';
+      // 旧データの希釈値（"1/5 cells" 等の文字列）を x の数値へ補正
+      if(r.seedMode==='dilution' && typeof r.dilution==='string' && r.dilution!==''){
+        var dm=r.dilution.match(/1\s*[:：∶\/]\s*([\d.]+)/)||r.dilution.match(/([\d.]+)/);
+        r.dilution=dm?parseFloat(dm[1]):'';
+      }
       if('conc' in r)delete r.conc;
       if(!Array.isArray(r.uses)){r.uses=r.fate?[FATEMAP[r.fate]||r.fate]:[];}
       if('fate' in r)delete r.fate;
@@ -726,9 +738,11 @@
     return b;
   }
 
+  var taskDate=null;
   function renderToday(){
     var el=document.getElementById('today');
-    var t=todayStr();
+    if(!taskDate)taskDate=todayStr();
+    var t=taskDate;
     var harvL=state.records.filter(function(r){return r.harvest===t;});
     var seedL=state.records.filter(function(r){return r.seed===t;});
     var total=harvL.length+seedL.length;
@@ -757,7 +771,16 @@
         return '<div class="tcol"><h3><span class="tg" style="background:'+c.color+'">'+c.title+'</span>'+c.n+' 件</h3>'+c.html+'</div>';
       }).join('')+'</div>';
     }
-    el.innerHTML='<h2>📋 本日のタスク <span class="date">'+t+'（'+dow+'）</span><span class="cnt">'+total+' 件</span></h2>'+body;
+    var diff=Math.round((d2t(t)-d2t(todayStr()))/DAY);
+    var rel=diff===0?'本日':diff===1?'明日':diff===-1?'昨日':(diff>0?('+'+diff+'日'):(diff+'日'));
+    el.innerHTML='<h2>📋 <span class="ttl">'+rel+'のタスク</span>'
+      +'<span class="tnav"><button data-nav="-1" aria-label="前日" title="前日">◀</button>'
+      +'<span class="date">'+t+'（'+dow+'）</span>'
+      +'<button data-nav="1" aria-label="翌日" title="翌日">▶</button></span>'
+      +'<button class="todaybtn'+(diff===0?' hide':'')+'" data-today="1">本日へ</button>'
+      +'<span class="cnt">'+total+' 件</span></h2>'+body;
+    el.querySelectorAll('[data-nav]').forEach(function(b){b.onclick=function(){taskDate=addDaysStr(taskDate,parseInt(b.getAttribute('data-nav'),10));renderToday();};});
+    var tb=el.querySelector('[data-today]');if(tb)tb.onclick=function(){taskDate=todayStr();renderToday();};
     el.querySelectorAll('.titem').forEach(function(n){n.onclick=function(){openForm(n.getAttribute('data-id'));};});
   }
   function renderLegend(){
