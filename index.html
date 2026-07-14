@@ -135,8 +135,15 @@
   .labels{position:sticky;left:0;z-index:15;background:var(--surface);border-right:1px solid var(--border-strong)}
   .canvas{position:relative;z-index:1}
 
-  .rowlab{display:flex;flex-direction:column;justify-content:center;padding:0 14px;
+  .rowlab{position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 14px;
     border-bottom:1px solid var(--border);gap:2px}
+  .mcbtn{position:absolute;right:10px;top:8px;font-size:10px;font-weight:700;letter-spacing:.03em;
+    padding:2px 7px;border-radius:6px;border:1px solid var(--border-strong);background:var(--surface);
+    color:var(--ink-soft);cursor:pointer;line-height:1.4;font-variant-numeric:tabular-nums}
+  .mcbtn:hover{border-color:#0ea5a0;color:#0ea5a0}
+  .mcbtn.on{background:#0ea5a0;border-color:#0ea5a0;color:#fff}
+  .mcmk{position:absolute;top:-4px;width:9px;height:9px;border-radius:50%;background:var(--surface);
+    border:2px solid #0ea5a0;transform:translateX(-50%);z-index:8}
   .rowlab.grouphdr{background:var(--surface-2);flex-direction:row;align-items:center;gap:8px}
   .rowlab .cell{font-weight:600;font-size:13px;letter-spacing:-.01em}
   .rowlab.grouphdr .cell{font-size:12.5px}
@@ -397,6 +404,12 @@
         <div class="usewrap" id="fatePick"></div>
       </div>
 
+      <div class="field full" style="gap:7px">
+        <label>培地交換（MC）記録</label>
+        <div class="chips" id="mcList"></div>
+        <span class="hint">行の「MC」ボタンでも本日分をワンクリック記録できます</span>
+      </div>
+
       <div class="field full">
         <label for="f_note">メモ</label>
         <input id="f_note" placeholder="任意">
@@ -494,6 +507,7 @@
       if('conc' in r)delete r.conc;
       if(!Array.isArray(r.uses)){r.uses=r.fate?[FATEMAP[r.fate]||r.fate]:[];}
       if('fate' in r)delete r.fate;
+      if(!Array.isArray(r.mc))r.mc=[];
     });
     mergeSettingsFromRecords();
   }
@@ -527,12 +541,12 @@
     var T=todayStr();
     function rel(n){return addDaysStr(T,n);}
     var med='RPMI1640 CM (10% FBS, Glutamax, P/S)';
-    function R(o){o.medium=o.medium||med;o.genotype=o.genotype||'WT';o.gene=o.gene||'';o.perWell=!!o.perWell;o.reagents=o.reagents||'';o.note=o.note||'';o.seedMode=o.seedMode||'conc';o.concMant=(o.concMant===0||o.concMant)?o.concMant:'';o.concExp=o.concExp||DEFAULT_EXP;o.dilution=o.dilution||'';o.uses=o.uses||[];return o;}
+    function R(o){o.medium=o.medium||med;o.genotype=o.genotype||'WT';o.gene=o.gene||'';o.perWell=!!o.perWell;o.reagents=o.reagents||'';o.note=o.note||'';o.seedMode=o.seedMode||'conc';o.concMant=(o.concMant===0||o.concMant)?o.concMant:'';o.concExp=o.concExp||DEFAULT_EXP;o.dilution=o.dilution||'';o.uses=o.uses||[];o.mc=o.mc||[];return o;}
     return [
       R({id:'s1',cell:'HeLa',dish:'d100',passage:5,seed:rel(-14),harvest:rel(-10),concMant:1.0,concExp:6,vol:'10',uses:['継代']}),
       R({id:'s2',cell:'HeLa',dish:'d100',passage:6,seed:rel(-10),harvest:rel(-6),seedMode:'dilution',dilution:4,vol:'10',uses:['継代'],note:'希釈継代'}),
       R({id:'s3',cell:'HeLa',dish:'w6',passage:6,seed:rel(-10),harvest:rel(-7),concMant:3.0,concExp:5,vol:'2',perWell:true,reagents:'TGF-β 5 ng/mL',uses:['ISOGEN回収','DNA抽出'],note:'RNA/DNA回収'}),
-      R({id:'s4',cell:'HeLa',dish:'d100',passage:7,seed:rel(-6),harvest:rel(-2),concMant:1.0,concExp:6,vol:'10',uses:['凍結ストック'],note:'2 vials'}),
+      R({id:'s4',cell:'HeLa',dish:'d100',passage:7,seed:rel(-6),harvest:rel(-2),concMant:1.0,concExp:6,vol:'10',uses:['凍結ストック'],mc:[rel(-4)],note:'2 vials'}),
       R({id:'s5',cell:'HeLa',dish:'w12',passage:7,seed:rel(-6),harvest:rel(0),concMant:1.5,concExp:5,vol:'1',perWell:true,genotype:'KO',gene:'GeneX',reagents:'Puromycin 1 µg/mL',uses:['継代','ISOGEN回収','DNA抽出'],note:'本日回収'}),
       R({id:'s6',cell:'HeLa',dish:'d100',passage:8,seed:rel(0),harvest:rel(5),concMant:1.0,concExp:6,vol:'10',genotype:'KO',gene:'GeneX',uses:['継代']})
     ];
@@ -651,7 +665,7 @@
     var canvas=document.createElement('div');canvas.className='canvas';
     canvas.style.width=L.timeW+'px';canvas.style.height=L.bodyH+'px';
     canvas.innerHTML=buildBG(L);
-    L.rows.forEach(function(row){if(row.kind==='rec')canvas.appendChild(makeBar(row));});
+    L.rows.forEach(function(row){if(row.kind==='rec')canvas.appendChild(makeBar(row,L));});
     grid.appendChild(canvas);
 
     var board=document.getElementById('board');
@@ -697,15 +711,20 @@
       var dots=recUses(r).map(function(l){return '<span class="dot" style="background:'+useMeta(l).color+'"></span>';}).join('');
       if(!dots)dots='<span class="dot" style="background:var(--ink-faint)"></span>';
       el.className='rowlab';el.style.height=row.h+'px';el.style.cursor='pointer';
+      var mc=recMC(r), mcToday=mc.indexOf(todayStr())>=0;
+      var mcTip=mc.length?('培地交換(MC): '+mc.join(', ')):'クリックで本日の培地交換(MC)を記録';
       el.innerHTML='<span class="cell">'+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span></span>'
         +'<span class="meta">'+dots
-        +' <span class="pass">'+passLabel(r)+'</span> · '+esc((DISH[r.dish]||{}).short||r.dish)+'</span>';
+        +' <span class="pass">'+passLabel(r)+'</span> · '+esc((DISH[r.dish]||{}).short||r.dish)+'</span>'
+        +'<button class="mcbtn'+(mcToday?' on':'')+'" title="'+esc(mcTip)+'">MC'+(mc.length?(' '+mc.length):'')+'</button>';
       el.onclick=function(){openForm(r.id);};
+      var mcb=el.querySelector('.mcbtn');
+      mcb.onclick=function(e){e.stopPropagation();toggleMC(r.id);};
     }
     return el;
   }
 
-  function makeBar(row){
+  function makeBar(row,L){
     var r=row.rec;
     var col=primColor(r);
     var x0=row._x0,x1=row._x1,w=x1-x0;
@@ -731,13 +750,30 @@
       +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定（進行中）')+'\n'
       +'培地 '+(r.medium||'—')+'\n'
       +'濃度 '+(concDisplay(r)||'—')+'  /  '+(volText(r)||'—')+'\n'
-      +'用途 '+(recUses(r).join('・')||'—')+(r.reagents?('\n添加 '+r.reagents):'')+(r.note?('\nメモ '+r.note):'');
+      +'用途 '+(recUses(r).join('・')||'—')+(r.reagents?('\n添加 '+r.reagents):'')
+      +(recMC(r).length?('\n培地交換 '+recMC(r).join(', ')):'')+(r.note?('\nメモ '+r.note):'');
     b.title=tip;
+    // 培地交換(MC)マーカー
+    recMC(r).forEach(function(m){
+      var left=L.xOf(m)-x0;
+      if(left<-5||left>w+5)return;
+      var mk=document.createElement('span');
+      mk.className='mcmk';mk.style.left=left+'px';mk.title='培地交換(MC) '+m;
+      b.appendChild(mk);
+    });
     b.onclick=function(){openForm(r.id);};
     b.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openForm(r.id);}};
     return b;
   }
 
+  function recMC(r){return Array.isArray(r.mc)?r.mc:[];}
+  function toggleMC(id){
+    var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
+    if(!Array.isArray(r.mc))r.mc=[];
+    var t=todayStr(),i=r.mc.indexOf(t);
+    if(i>=0)r.mc.splice(i,1); else r.mc.push(t);
+    r.mc.sort();save();render();
+  }
   var taskDate=null;
   function renderToday(){
     var el=document.getElementById('today');
@@ -831,6 +867,17 @@
     fp.querySelectorAll('.uop').forEach(function(n){n.onclick=function(){toggleUse(n.getAttribute('data-l'));};});
   }
   function toggleUse(label){var i=formUses.indexOf(label);if(i>=0)formUses.splice(i,1);else formUses.push(label);renderUsePicker();}
+  var formMC=[];
+  function renderMcList(){
+    var box=document.getElementById('mcList');
+    var chips=formMC.slice().sort().map(function(d){
+      return '<span class="chip on" data-d="'+esc(d)+'">'+esc(d)+' <b style="margin-left:2px">×</b></span>';
+    }).join('');
+    var addChip='<span class="chip" data-add="1">＋ 本日（'+todayStr()+'）</span>';
+    box.innerHTML=chips+addChip;
+    box.querySelectorAll('.chip[data-d]').forEach(function(c){c.onclick=function(){var d=c.getAttribute('data-d');formMC=formMC.filter(function(x){return x!==d;});renderMcList();};});
+    var a=box.querySelector('[data-add]');if(a)a.onclick=function(){var t=todayStr();if(formMC.indexOf(t)<0)formMC.push(t);renderMcList();};
+  }
   function setGeno(g){
     document.getElementById('f_geno').value=g;
     document.querySelectorAll('#genoPick .op').forEach(function(n){n.classList.toggle('sel',n.getAttribute('data-g')===g);});
@@ -871,8 +918,9 @@
     var r=id?state.records.filter(function(x){return x.id===id;})[0]:null;
     document.getElementById('mTitle').textContent=r?'培養を編集':'培養を追加';
     document.getElementById('f_id').value=r?r.id:'';
-    var data=r||preset||{cell:'',dish:'d100',passage:'',seed:todayStr(),harvest:'',genotype:'WT',gene:'',medium:(state.settings.media[0]||''),seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:['継代'],note:''};
+    var data=r||preset||{cell:'',dish:'d100',passage:'',seed:todayStr(),harvest:'',genotype:'WT',gene:'',medium:(state.settings.media[0]||''),seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:['継代'],mc:[],note:''};
     formUses=recUses(data).slice();
+    formMC=recMC(data).slice();
     document.getElementById('f_cell').value=data.cell||'';
     document.getElementById('f_dish').value=data.dish||'d100';
     document.getElementById('f_passage').value=(data.passage||data.passage===0)?data.passage:'';
@@ -889,6 +937,7 @@
     document.getElementById('f_note').value=data.note||'';
     setSeedMode(data.seedMode||'conc');
     renderUsePicker();
+    renderMcList();
     setGeno(data.genotype||'WT');
     fillGeneOptions(data.gene||'');
     renderReagChips();
@@ -923,6 +972,7 @@
       perWell:document.getElementById('f_perwell').checked,
       reagents:document.getElementById('f_reagents').value.trim(),
       uses:formUses.slice(),
+      mc:formMC.slice().sort(),
       note:document.getElementById('f_note').value.trim()
     };
   }
@@ -1014,6 +1064,7 @@
     {h:'ウェルあたり',get:function(r){return r.perWell?'○':'';},set:function(r,v){r.perWell=boolFromText(v);}},
     {h:'添加薬品',get:function(r){return r.reagents;},set:function(r,v){r.reagents=v;}},
     {h:'用途',get:function(r){return recUses(r).join(' / ');},set:function(r,v){r.uses=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
+    {h:'培地交換',get:function(r){return recMC(r).join('; ');},set:function(r,v){r.mc=(''+v).split(/[;,、|\s]+/).map(function(s){return normDate(s.trim());}).filter(Boolean);}},
     {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}}
   ];
   function csvCell(v){v=(v==null?'':''+v);if(/[",\r\n]/.test(v))return '"'+v.replace(/"/g,'""')+'"';return v;}
@@ -1039,7 +1090,7 @@
     var recs=[];
     for(var r=1;r<rows.length;r++){
       var cells=rows[r];
-      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:[],note:''};
+      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:[],mc:[],note:''};
       for(var c=0;c<cells.length;c++){var col=colMap[c];if(col&&col.set)col.set(rec,cells[c]);}
       if(!rec.cell&&!rec.seed)continue;
       if(!rec.id)rec.id=uid();
