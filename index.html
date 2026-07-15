@@ -144,6 +144,11 @@
   .mcbtn.on{background:#0ea5a0;border-color:#0ea5a0;color:#fff}
   .mcmk{position:absolute;top:-4px;width:9px;height:9px;border-radius:50%;background:var(--surface);
     border:2px solid #0ea5a0;transform:translateX(-50%);z-index:8}
+  .hiddenrec{opacity:.42}
+  .bar.hiddenrec{filter:grayscale(.45);border-style:dotted}
+  .bar:hover.hiddenrec,.rowlab.hiddenrec:hover{opacity:.75}
+  .hidetag{font-size:9px;font-weight:700;padding:0 5px;border-radius:4px;background:var(--surface-3);
+    border:1px solid var(--border-strong);color:var(--ink-faint);white-space:nowrap}
   .rowlab.grouphdr{background:var(--surface-2);flex-direction:row;align-items:center;gap:8px}
   .rowlab .cell{font-weight:600;font-size:13px;letter-spacing:-.01em}
   .rowlab.grouphdr .cell{font-size:12.5px}
@@ -287,6 +292,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8.4 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8.4a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         設定
       </button>
+      <button class="btn ghost" id="hiddenBtn" title="非表示（アーカイブ）にした培養の表示を切り替え">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        非表示
+      </button>
       <button class="btn ghost" id="openBtn" title="JSONファイルを開いて接続。以降そのファイルへ毎回自動保存します">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         JSONを開く
@@ -417,6 +426,7 @@
     </form>
     <footer>
       <button class="btn danger" id="mDelete" style="display:none">削除</button>
+      <button class="btn ghost" id="mHide" style="display:none" title="データは残したまま表示から外す">非表示にする</button>
       <button class="btn ghost" id="mDup" style="display:none" title="内容を引き継いで新規作成">複製</button>
       <div class="spc"></div>
       <button class="btn ghost" id="mCancel">キャンセル</button>
@@ -486,6 +496,7 @@
   }
 
   var state={records:[],settings:defaultSettings()};
+  var showHidden=false;
   var px=40;
   var LABELW=210, HH=54, ROWH=84, GROUPH=32;
 
@@ -508,6 +519,7 @@
       if(!Array.isArray(r.uses)){r.uses=r.fate?[FATEMAP[r.fate]||r.fate]:[];}
       if('fate' in r)delete r.fate;
       if(!Array.isArray(r.mc))r.mc=[];
+      if(typeof r.hidden!=='boolean')r.hidden=false;
     });
     mergeSettingsFromRecords();
   }
@@ -595,7 +607,7 @@
 
   // ---------- layout ----------
   function computeLayout(){
-    var recs=state.records.slice();
+    var recs=state.records.filter(function(r){return showHidden||!r.hidden;});
     if(!recs.length)return null;
     var idx={};state.records.forEach(function(r,i){idx[r.id]=i;});
     var minT=Infinity,maxT=-Infinity;
@@ -639,6 +651,7 @@
 
   function render(){
     renderToday();
+    updateHiddenBtn();
     var L=computeLayout();
     var grid=document.getElementById('grid');
     document.documentElement.style.setProperty('--labelw',LABELW+'px');
@@ -648,7 +661,10 @@
       var th=document.createElement('div');th.className='thead';th.style.minWidth='600px';th.style.height=HH+'px';grid.appendChild(th);
       var lb=document.createElement('div');lb.className='labels';lb.style.minHeight='320px';grid.appendChild(lb);
       var cv=document.createElement('div');cv.className='canvas';cv.style.minHeight='320px';cv.style.minWidth='600px';
-      cv.innerHTML='<div class="empty"><h3>培養がまだありません</h3><p>「培養を追加」から播種を登録してください。</p><button class="btn primary" id="emptyAdd">最初の培養を追加</button></div>';
+      var nHid=state.records.filter(function(r){return r.hidden;}).length;
+      cv.innerHTML=nHid
+        ? '<div class="empty"><h3>表示できる培養がありません</h3><p>'+nHid+' 件すべてが非表示（アーカイブ）です。ツールバーの「非表示」を押すと表示できます。</p><button class="btn primary" id="emptyAdd">培養を追加</button></div>'
+        : '<div class="empty"><h3>培養がまだありません</h3><p>「培養を追加」から播種を登録してください。</p><button class="btn primary" id="emptyAdd">最初の培養を追加</button></div>';
       grid.appendChild(cv);
       document.getElementById('emptyAdd').onclick=function(){openForm(null);};
       return;
@@ -710,10 +726,11 @@
       var gcls=r.genotype==='KO'?'ko':'wt';
       var dots=recUses(r).map(function(l){return '<span class="dot" style="background:'+useMeta(l).color+'"></span>';}).join('');
       if(!dots)dots='<span class="dot" style="background:var(--ink-faint)"></span>';
-      el.className='rowlab';el.style.height=row.h+'px';el.style.cursor='pointer';
+      el.className='rowlab'+(r.hidden?' hiddenrec':'');el.style.height=row.h+'px';el.style.cursor='pointer';
       var mc=recMC(r), mcToday=mc.indexOf(todayStr())>=0;
       var mcTip=mc.length?('培地交換(MC): '+mc.join(', ')):'クリックで本日の培地交換(MC)を記録';
-      el.innerHTML='<span class="cell">'+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span></span>'
+      el.innerHTML='<span class="cell">'+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span>'
+        +(r.hidden?' <span class="hidetag">非表示</span>':'')+'</span>'
         +'<span class="meta">'+dots
         +' <span class="pass">'+passLabel(r)+'</span> · '+esc((DISH[r.dish]||{}).short||r.dish)+'</span>'
         +'<button class="mcbtn'+(mcToday?' on':'')+'" title="'+esc(mcTip)+'">MC'+(mc.length?(' '+mc.length):'')+'</button>';
@@ -729,7 +746,7 @@
     var col=primColor(r);
     var x0=row._x0,x1=row._x1,w=x1-x0;
     var b=document.createElement('div');
-    b.className='bar'+(r.harvest?'':' ongoing');
+    b.className='bar'+(r.harvest?'':' ongoing')+(r.hidden?' hiddenrec':'');
     b.style.left=x0+'px';b.style.top=(row.y+8)+'px';b.style.width=w+'px';b.style.height=(row.h-16)+'px';
     b.style.background='color-mix(in srgb,'+col+' 16%,transparent)';
     b.style.borderColor='color-mix(in srgb,'+col+' 42%,transparent)';
@@ -766,6 +783,18 @@
     return b;
   }
 
+  function updateHiddenBtn(){
+    var n=state.records.filter(function(r){return r.hidden;}).length;
+    var b=document.getElementById('hiddenBtn');if(!b)return;
+    var lab=(showHidden?'非表示も表示中':'非表示')+(n?(' '+n):'');
+    b.lastChild.nodeValue=' '+lab+' ';
+    b.classList.toggle('primary',showHidden);b.classList.toggle('ghost',!showHidden);
+  }
+  function toggleShowHidden(){showHidden=!showHidden;render();}
+  function toggleHideRec(id){
+    var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
+    r.hidden=!r.hidden;save();closeForm();render();
+  }
   function recMC(r){return Array.isArray(r.mc)?r.mc:[];}
   function toggleMC(id){
     var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
@@ -779,8 +808,8 @@
     var el=document.getElementById('today');
     if(!taskDate)taskDate=todayStr();
     var t=taskDate;
-    var harvL=state.records.filter(function(r){return r.harvest===t;});
-    var seedL=state.records.filter(function(r){return r.seed===t;});
+    var harvL=state.records.filter(function(r){return !r.hidden&&r.harvest===t;});
+    var seedL=state.records.filter(function(r){return !r.hidden&&r.seed===t;});
     var total=harvL.length+seedL.length;
     function itemHTML(r,kind){
       var dish=(DISH[r.dish]||{}).short||r.dish;
@@ -943,6 +972,9 @@
     renderReagChips();
     document.getElementById('mDelete').style.display=r?'inline-flex':'none';
     document.getElementById('mDup').style.display=r?'inline-flex':'none';
+    var hb=document.getElementById('mHide');
+    hb.style.display=r?'inline-flex':'none';
+    if(r){hb.textContent=r.hidden?'再表示する':'非表示にする';hb.dataset.id=r.id;}
     scrim.classList.add('open');
     setTimeout(function(){document.getElementById('f_cell').focus();},30);
   }
@@ -1065,7 +1097,8 @@
     {h:'添加薬品',get:function(r){return r.reagents;},set:function(r,v){r.reagents=v;}},
     {h:'用途',get:function(r){return recUses(r).join(' / ');},set:function(r,v){r.uses=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'培地交換',get:function(r){return recMC(r).join('; ');},set:function(r,v){r.mc=(''+v).split(/[;,、|\s]+/).map(function(s){return normDate(s.trim());}).filter(Boolean);}},
-    {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}}
+    {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}},
+    {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}}
   ];
   function csvCell(v){v=(v==null?'':''+v);if(/[",\r\n]/.test(v))return '"'+v.replace(/"/g,'""')+'"';return v;}
   function exportCSV(){
@@ -1090,7 +1123,7 @@
     var recs=[];
     for(var r=1;r<rows.length;r++){
       var cells=rows[r];
-      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:[],mc:[],note:''};
+      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:[],mc:[],note:'',hidden:false};
       for(var c=0;c<cells.length;c++){var col=colMap[c];if(col&&col.set)col.set(rec,cells[c]);}
       if(!rec.cell&&!rec.seed)continue;
       if(!rec.id)rec.id=uid();
@@ -1196,6 +1229,8 @@
   document.getElementById('mSave').onclick=saveForm;
   document.getElementById('mDelete').onclick=deleteRec;
   document.getElementById('mDup').onclick=dupRec;
+  document.getElementById('mHide').onclick=function(){toggleHideRec(document.getElementById('mHide').dataset.id);};
+  document.getElementById('hiddenBtn').onclick=toggleShowHidden;
   document.getElementById('setBtn').onclick=openSettings;
   document.getElementById('setClose').onclick=closeSettings;
   document.getElementById('setDone').onclick=closeSettings;
