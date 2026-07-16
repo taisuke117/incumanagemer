@@ -120,6 +120,7 @@
   .titem .r1{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .titem .r1 .p{font-family:var(--mono);color:var(--ink-soft);font-weight:600}
   .titem .r2{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;word-break:break-word}
+  .titem .r3{font-family:var(--mono);font-size:10px;color:var(--ink-faint);font-variant-numeric:tabular-nums;margin-top:1px}
   .titem .dishchip{font-family:var(--mono);font-size:9.5px;padding:0 5px;border-radius:4px;border:1px solid var(--border-strong);color:var(--ink-soft);font-weight:600;background:var(--surface-3)}
   .titem .uchip{font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;color:#fff;white-space:nowrap}
   .tempty{font-size:12px;color:var(--ink-faint);padding:6px 2px}
@@ -819,10 +820,15 @@
       var r2=kind==='seed'
         ? ([mediumShort(r.medium),concDisplay(r),volText(r)].filter(Boolean).join(' · ')||'—')
         : ('やること: '+(us.join(' ＋ ')||'回収')+(us.length>1?'（'+us.length+'件）':'')+(r.note?('  — '+r.note):''));
+      var days=Math.round((d2t(t)-d2t(r.seed))/DAY);
+      var seedInfo=kind==='seed'
+        ? ('播種日 '+r.seed+'　'+(r.harvest?('回収予定 '+r.harvest):'回収予定 未定'))
+        : ('播種 '+r.seed+'（培養'+days+'日）'+(r.harvest?('　回収予定 '+r.harvest):''));
       return '<div class="titem" data-id="'+r.id+'"><div class="main">'
         +'<div class="r1">'+esc(r.cell)+' <span class="p">'+passLabel(r)+'</span> <span class="dishchip">'+esc(dish)+'</span> <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span>'
         +(uchips?(' '+uchips):'')+'</div>'
-        +'<div class="r2">'+esc(r2)+'</div></div></div>';
+        +'<div class="r2">'+esc(r2)+'</div>'
+        +'<div class="r3">'+esc(seedInfo)+'</div></div></div>';
     }
     var dow=DOW[new Date(d2t(t)).getDay()];
     var cols=[];
