@@ -5,7 +5,7 @@
     --border:#d7dee7; --border-strong:#c2ccd8;
     --ink:#1a2029; --ink-soft:#5a6675; --ink-faint:#8b97a6;
     --accent:#e0397a; --accent-ink:#fff; --accent-soft:#fce1ec;
-    --weekend:rgba(120,135,155,.07); --today:#e0397a;
+    --weekend:rgba(120,135,155,.07); --today:#e0397a; --arrow:#4a5a74;
     --f-passage:#e0397a; --f-passage-bg:#fce0ec;
     --f-freeze:#1f9fc0;  --f-freeze-bg:#dcf1f6;
     --f-isogen:#7a58d6;  --f-isogen-bg:#e9e2f9;
@@ -20,7 +20,7 @@
       --border:#2a3543; --border-strong:#374556;
       --ink:#e6ecf3; --ink-soft:#98a5b5; --ink-faint:#697687;
       --accent:#ff5c97; --accent-ink:#1a0510; --accent-soft:#3a1526;
-      --weekend:rgba(150,170,195,.05); --today:#ff5c97;
+      --weekend:rgba(150,170,195,.05); --today:#ff5c97; --arrow:#a7b6cc;
       --f-passage:#ff5c97; --f-passage-bg:#3a1526;
       --f-freeze:#3cc3e0;  --f-freeze-bg:#12303a;
       --f-isogen:#a488f5;  --f-isogen-bg:#241a3d;
@@ -33,7 +33,7 @@
     --border:#d7dee7; --border-strong:#c2ccd8;
     --ink:#1a2029; --ink-soft:#5a6675; --ink-faint:#8b97a6;
     --accent:#e0397a; --accent-ink:#fff; --accent-soft:#fce1ec;
-    --weekend:rgba(120,135,155,.07); --today:#e0397a;
+    --weekend:rgba(120,135,155,.07); --today:#e0397a; --arrow:#4a5a74;
     --f-passage:#e0397a; --f-passage-bg:#fce0ec;
     --f-freeze:#1f9fc0;  --f-freeze-bg:#dcf1f6;
     --f-isogen:#7a58d6;  --f-isogen-bg:#e9e2f9;
@@ -45,7 +45,7 @@
     --border:#2a3543; --border-strong:#374556;
     --ink:#e6ecf3; --ink-soft:#98a5b5; --ink-faint:#697687;
     --accent:#ff5c97; --accent-ink:#1a0510; --accent-soft:#3a1526;
-    --weekend:rgba(150,170,195,.05); --today:#ff5c97;
+    --weekend:rgba(150,170,195,.05); --today:#ff5c97; --arrow:#a7b6cc;
     --f-passage:#ff5c97; --f-passage-bg:#3a1526;
     --f-freeze:#3cc3e0;  --f-freeze-bg:#12303a;
     --f-isogen:#a488f5;  --f-isogen-bg:#241a3d;
@@ -289,7 +289,7 @@
     <div class="toolbar">
       <div class="zoom" title="表示スケール">
         <button id="zoomOut" aria-label="縮小">−</button>
-        <span id="zoomLabel">1日 40px</span>
+        <span id="zoomLabel">1日 58px</span>
         <button id="zoomIn" aria-label="拡大">＋</button>
       </div>
       <button class="btn ghost" id="themeBtn" title="ライト / ダーク切り替え">
@@ -524,7 +524,7 @@
 
   var state={records:[],settings:defaultSettings()};
   var showHidden=false;
-  var px=40;
+  var px=58;
   var LABELW=210, HH=54, ROWH=84, GROUPH=32;
 
   function uid(){return 'r'+Math.random().toString(36).slice(2,9)+(state.records.length);}
@@ -753,12 +753,12 @@
       var p=L.recPos[r.parent],c=L.recPos[r.id];
       if(!p||!c)return;
       var x1=p.x1,y1=p.cy,x2=c.x0,y2=c.cy;
-      var dx=Math.max(22,Math.abs(x2-x1)*0.4);
-      paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" marker-end="url(#ah)" opacity="0.85"/>';
-      paths+='<circle cx="'+x1+'" cy="'+y1+'" r="2.6" fill="var(--ink-faint)"/>';
+      var dx=Math.max(26,Math.abs(x2-x1)*0.45);
+      paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--arrow)" stroke-width="2.2" marker-end="url(#ah)"/>';
+      paths+='<circle cx="'+x1+'" cy="'+y1+'" r="3.2" fill="var(--arrow)"/>';
     });
-    return '<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0;z-index:5;pointer-events:none" xmlns="http://www.w3.org/2000/svg">'
-      +'<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-faint)"/></marker></defs>'
+    return '<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0;z-index:7;pointer-events:none" xmlns="http://www.w3.org/2000/svg">'
+      +'<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--arrow)"/></marker></defs>'
       +paths+'</svg>';
   }
 
@@ -913,7 +913,7 @@
       +'<span class="sep"></span><span class="lab">ディッシュ</span><div class="grp">'+dishes+'</div>'
       +'<span class="sep"></span><span class="lg"><span style="width:16px;border-top:2px dashed var(--today);display:inline-block"></span>本日</span>'
       +'<span class="lg">バー ▸ 播種→回収</span>'
-      +'<span class="lg"><svg width="26" height="10"><path d="M0 5 H20" stroke="var(--ink-faint)" stroke-width="1.6" fill="none"/><path d="M18 1 L24 5 L18 9" stroke="var(--ink-faint)" stroke-width="1.6" fill="none"/></svg>継代（親→子）</span>';
+      +'<span class="lg"><svg width="26" height="10"><path d="M0 5 H20" stroke="var(--arrow)" stroke-width="2" fill="none"/><path d="M18 1 L24 5 L18 9" stroke="var(--arrow)" stroke-width="2" fill="none"/></svg>継代（親→子）</span>';
   }
 
   // ---------- record form ----------
@@ -1327,7 +1327,7 @@
 
   // ---------- theme / zoom ----------
   function toggleTheme(){var cur=document.documentElement.getAttribute('data-theme');var isDark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',isDark?'light':'dark');}
-  function setZoom(delta){px=Math.max(18,Math.min(84,px+delta));document.getElementById('zoomLabel').textContent='1日 '+px+'px';render();}
+  function setZoom(delta){px=Math.max(18,Math.min(110,px+delta));document.getElementById('zoomLabel').textContent='1日 '+px+'px';render();}
 
   // ---------- wire ----------
   document.getElementById('addBtn').onclick=function(){openForm(null);};
