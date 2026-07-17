@@ -170,8 +170,12 @@
   .bar:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
   .bar .capln{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--barcap);border-radius:8px 0 0 8px}
   .bar.ongoing{border-style:dashed}
-  .bar .arw{position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;
-    border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:9px solid var(--barcap)}
+  .bar .linkknob{position:absolute;right:-7px;top:50%;transform:translateY(-50%);width:12px;height:12px;
+    border-radius:50%;background:var(--surface);border:2px solid var(--arrow);cursor:crosshair;z-index:10;
+    opacity:.5;transition:opacity .12s,transform .12s}
+  .bar:hover .linkknob{opacity:1}
+  .bar .linkknob:hover{transform:translateY(-50%) scale(1.25)}
+  .bar.droptarget{outline:2px solid var(--arrow);outline-offset:2px}
   .bar .inner{overflow:hidden;min-width:0;width:100%;padding-left:3px;display:flex;flex-direction:column;gap:2px}
   .bar .l1{font-size:11.5px;font-weight:640;line-height:1.2;display:flex;flex-wrap:wrap;align-items:center;gap:3px 5px}
   .bar .l1 .p{font-family:var(--mono);color:var(--barcap)}
@@ -345,11 +349,10 @@
       <input type="hidden" id="f_id">
       <input type="hidden" id="f_geno" value="WT">
       <input type="hidden" id="f_seedmode" value="conc">
-      <input type="hidden" id="f_parent" value="">
-
       <div class="field full hidden" id="parentInfo">
-        <label>継代元</label>
-        <div class="parentbox"><span id="parentText"></span><button type="button" class="btn ghost" id="parentGo">たどる</button></div>
+        <label>継代元（親培養・複数可）</label>
+        <div class="chips" id="parentChips"></div>
+        <span class="hint">チップをクリックでたどる／× で解除。タイムラインで培養の右端●を別の培養へドラッグしてもつながります</span>
       </div>
 
       <div class="field">
@@ -548,7 +551,8 @@
       if(!Array.isArray(r.mc))r.mc=[];
       if(typeof r.hidden!=='boolean')r.hidden=false;
       if(!Array.isArray(r.contents))r.contents=[];
-      if(typeof r.parent!=='string')r.parent='';
+      if(!Array.isArray(r.parents))r.parents=r.parent?[r.parent]:[];
+      if('parent' in r)delete r.parent;
     });
     mergeSettingsFromRecords();
   }
@@ -749,17 +753,53 @@
   function buildArrows(L){
     var W=L.timeW,H=L.bodyH,paths='';
     state.records.forEach(function(r){
-      if(!r.parent)return;
-      var p=L.recPos[r.parent],c=L.recPos[r.id];
-      if(!p||!c)return;
-      var x1=p.x1,y1=p.cy,x2=c.x0,y2=c.cy;
-      var dx=Math.max(26,Math.abs(x2-x1)*0.45);
-      paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--arrow)" stroke-width="2.2" marker-end="url(#ah)"/>';
-      paths+='<circle cx="'+x1+'" cy="'+y1+'" r="3.2" fill="var(--arrow)"/>';
+      var c=L.recPos[r.id]; if(!c)return;
+      recParents(r).forEach(function(pid){
+        var p=L.recPos[pid]; if(!p)return;
+        var x1=p.x1,y1=p.cy,x2=c.x0,y2=c.cy;
+        var dx=Math.max(26,Math.abs(x2-x1)*0.45);
+        paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--arrow)" stroke-width="2.2" marker-end="url(#ah)"/>';
+        paths+='<circle cx="'+x1+'" cy="'+y1+'" r="3.2" fill="var(--arrow)"/>';
+      });
     });
     return '<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0;z-index:7;pointer-events:none" xmlns="http://www.w3.org/2000/svg">'
       +'<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--arrow)"/></marker></defs>'
       +paths+'</svg>';
+  }
+
+  // ---- ドラッグで系譜（親→子）をつなぐ ----
+  var linkOverlay=null;
+  function startLinkDrag(sourceId,e){
+    var startX=e.clientX,startY=e.clientY;
+    linkOverlay=document.createElement('div');
+    linkOverlay.style.cssText='position:fixed;inset:0;z-index:9999;pointer-events:none';
+    linkOverlay.innerHTML='<svg width="100%" height="100%" style="position:absolute;inset:0"><line id="__dragline" x1="'+startX+'" y1="'+startY+'" x2="'+startX+'" y2="'+startY+'" stroke="var(--arrow)" stroke-width="2.4" stroke-dasharray="5 4"/></svg>';
+    document.body.appendChild(linkOverlay);
+    var line=linkOverlay.querySelector('#__dragline');
+    function clearHi(){document.querySelectorAll('.bar.droptarget').forEach(function(b){b.classList.remove('droptarget');});}
+    function targetAt(x,y){var el=document.elementFromPoint(x,y);var tb=el&&el.closest?el.closest('.bar'):null;return (tb&&tb.dataset.id&&tb.dataset.id!==sourceId)?tb:null;}
+    function move(ev){line.setAttribute('x2',ev.clientX);line.setAttribute('y2',ev.clientY);clearHi();var tb=targetAt(ev.clientX,ev.clientY);if(tb)tb.classList.add('droptarget');}
+    function up(ev){
+      document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);
+      var tb=targetAt(ev.clientX,ev.clientY);clearHi();
+      if(linkOverlay){linkOverlay.remove();linkOverlay=null;}
+      if(tb)connectLink(sourceId,tb.dataset.id);
+    }
+    document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
+  }
+  function isAncestor(ancId,nodeId){
+    var seen={};
+    function up(id){if(seen[id])return false;seen[id]=1;var rec=state.records.filter(function(x){return x.id===id;})[0];if(!rec)return false;var ps=recParents(rec);for(var i=0;i<ps.length;i++){if(ps[i]===ancId)return true;if(up(ps[i]))return true;}return false;}
+    return up(nodeId);
+  }
+  function connectLink(sourceId,targetId){
+    var target=state.records.filter(function(x){return x.id===targetId;})[0];
+    if(!target)return;
+    if(!Array.isArray(target.parents))target.parents=[];
+    if(target.parents.indexOf(sourceId)>=0){alert('すでにつながっています。');return;}
+    if(isAncestor(targetId,sourceId)){alert('その向きだと系譜が循環します。新しい方（子）へ向けてつないでください。');return;}
+    target.parents.push(sourceId);
+    save();render();
   }
 
   function makeRowLabel(row){
@@ -793,6 +833,7 @@
     var x0=row._x0,x1=row._x1,w=x1-x0;
     var b=document.createElement('div');
     b.className='bar'+(r.harvest?'':' ongoing')+(r.hidden?' hiddenrec':'');
+    b.dataset.id=r.id;
     b.style.left=x0+'px';b.style.top=(row.y+8)+'px';b.style.width=w+'px';b.style.height=(row.h-16)+'px';
     b.style.background='color-mix(in srgb,'+col+' 16%,transparent)';
     b.style.borderColor='color-mix(in srgb,'+col+' 42%,transparent)';
@@ -804,14 +845,14 @@
     var l2parts=[mediumShort(r.medium),concDisplay(r),volText(r)].filter(Boolean);
     if(recContents(r).length)l2parts.push('内訳: '+recContents(r).join(', '));
     if(r.reagents)l2parts.push('+'+r.reagents);
-    b.innerHTML='<span class="capln"></span><span class="arw"></span>'
+    b.innerHTML='<span class="capln"></span>'
       +'<div class="inner">'
       +'<span class="l1"><span class="p">'+passLabel(r)+'</span> <span class="dishchip">'+esc(dish)+'</span> <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span></span>'
       +(uchips?('<span class="uses">'+uchips+'</span>'):'')
       +(l2parts.length?('<span class="l2">'+esc(l2parts.join(' · '))+'</span>'):'')
       +'</div>';
     var tip=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
-      +(r.parent&&parentDesc(r.parent)?('継代元 '+parentDesc(r.parent)+'\n'):'')
+      +(parentsDesc(r)?('継代元 '+parentsDesc(r)+'\n'):'')
       +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定（進行中）')+'\n'
       +(recContents(r).length?('内訳 '+recContents(r).join(', ')+'\n'):'')
       +'培地 '+(r.medium||'—')+'\n'
@@ -829,6 +870,11 @@
     });
     b.onclick=function(){openForm(r.id);};
     b.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openForm(r.id);}};
+    var knob=document.createElement('span');
+    knob.className='linkknob';knob.title='ドラッグして別の培養へつなぐ（＝この細胞をその条件で培養）';
+    knob.addEventListener('mousedown',function(e){e.stopPropagation();e.preventDefault();startLinkDrag(r.id,e);});
+    knob.addEventListener('click',function(e){e.stopPropagation();});
+    b.appendChild(knob);
     return b;
   }
 
@@ -846,6 +892,8 @@
   }
   function recMC(r){return Array.isArray(r.mc)?r.mc:[];}
   function recContents(r){return Array.isArray(r.contents)?r.contents:[];}
+  function recParents(r){return Array.isArray(r.parents)?r.parents:(r.parent?[r.parent]:[]);}
+  function parentsDesc(r){return recParents(r).map(parentDesc).filter(Boolean).join(' , ');}
   function toggleMC(id){
     var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
     if(!Array.isArray(r.mc))r.mc=[];
@@ -953,6 +1001,22 @@
   }
   function toggleUse(label){var i=formUses.indexOf(label);if(i>=0)formUses.splice(i,1);else formUses.push(label);renderUsePicker();}
   var formMC=[];
+  var formParents=[];
+  function renderParentInfo(){
+    var box=document.getElementById('parentChips'),pInfo=document.getElementById('parentInfo');
+    if(!formParents.length){pInfo.classList.add('hidden');box.innerHTML='';return;}
+    pInfo.classList.remove('hidden');
+    box.innerHTML=formParents.map(function(pid){
+      return '<span class="chip on" data-id="'+esc(pid)+'">'+esc(parentDesc(pid)||pid)+' <b class="x" style="margin-left:2px">×</b></span>';
+    }).join('');
+    box.querySelectorAll('.chip').forEach(function(c){
+      c.onclick=function(e){
+        var pid=c.getAttribute('data-id');
+        if(e.target.classList.contains('x')){formParents=formParents.filter(function(x){return x!==pid;});renderParentInfo();}
+        else openForm(pid);
+      };
+    });
+  }
   function renderMcList(){
     var box=document.getElementById('mcList');
     var chips=formMC.slice().sort().map(function(d){
@@ -1019,15 +1083,13 @@
   function openForm(id,preset){
     fillFormSelects();
     var r=id?state.records.filter(function(x){return x.id===id;})[0]:null;
-    document.getElementById('mTitle').textContent=r?'培養を編集':((preset&&preset.parent)?'継代して培養を作成':'新規培養を追加');
+    document.getElementById('mTitle').textContent=r?'培養を編集':((preset&&preset.parents&&preset.parents.length)?'継代して培養を作成':'新規培養を追加');
     document.getElementById('f_id').value=r?r.id:'';
     var data=r||preset||{cell:'',dish:'d100',passage:'',seed:todayStr(),harvest:'',genotype:'WT',gene:'',medium:(state.settings.media[0]||''),seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:['継代'],mc:[],note:''};
     formUses=recUses(data).slice();
     formMC=recMC(data).slice();
-    document.getElementById('f_parent').value=data.parent||'';
-    var pInfo=document.getElementById('parentInfo'),pTxt=document.getElementById('parentText');
-    if(data.parent&&parentDesc(data.parent)){pInfo.classList.remove('hidden');pTxt.textContent=parentDesc(data.parent);document.getElementById('parentGo').dataset.id=data.parent;}
-    else pInfo.classList.add('hidden');
+    formParents=recParents(data).slice();
+    renderParentInfo();
     document.getElementById('f_cell').value=data.cell||'';
     document.getElementById('f_dish').value=data.dish||'d100';
     document.getElementById('f_passage').value=(data.passage||data.passage===0)?data.passage:'';
@@ -1088,7 +1150,7 @@
       contents:isPlateDish()?reagTokens(document.getElementById('f_contents').value):[],
       uses:formUses.slice(),
       mc:formMC.slice().sort(),
-      parent:document.getElementById('f_parent').value,
+      parents:formParents.slice(),
       note:document.getElementById('f_note').value.trim()
     };
   }
@@ -1105,7 +1167,7 @@
     var id=document.getElementById('f_id').value;if(!id)return;
     if(!confirm('この培養を削除しますか？'))return;
     state.records=state.records.filter(function(x){return x.id!==id;});
-    state.records.forEach(function(x){if(x.parent===id)x.parent='';});
+    state.records.forEach(function(x){if(Array.isArray(x.parents))x.parents=x.parents.filter(function(p){return p!==id;});});
     save();closeForm();render();
   }
   function parentDesc(pid){
@@ -1119,7 +1181,7 @@
     if(!src)return;
     var preset=JSON.parse(JSON.stringify(src));
     delete preset.id;
-    preset.parent=src.id;
+    preset.parents=[src.id];
     if(typeof src.passage==='number')preset.passage=src.passage+1;
     preset.seed=todayStr();preset.harvest='';
     preset.uses=['継代'];preset.mc=[];preset.hidden=false;
@@ -1202,8 +1264,8 @@
     {h:'用途',get:function(r){return recUses(r).join(' / ');},set:function(r,v){r.uses=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'培地交換',get:function(r){return recMC(r).join('; ');},set:function(r,v){r.mc=(''+v).split(/[;,、|\s]+/).map(function(s){return normDate(s.trim());}).filter(Boolean);}},
     {h:'プレート内容',get:function(r){return recContents(r).join(' / ');},set:function(r,v){r.contents=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
-    {h:'継代元ID',get:function(r){return r.parent||'';},set:function(r,v){r.parent=(''+v).trim();}},
-    {h:'継代元(参考)',get:function(r){return parentDesc(r.parent);},set:null},
+    {h:'継代元ID',get:function(r){return recParents(r).join(';');},set:function(r,v){r.parents=(''+v).split(/[;,、|\s]+/).map(function(s){return s.trim();}).filter(Boolean);}},
+    {h:'継代元(参考)',get:function(r){return parentsDesc(r);},set:null},
     {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}},
     {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}}
   ];
@@ -1230,7 +1292,7 @@
     var recs=[];
     for(var r=1;r<rows.length;r++){
       var cells=rows[r];
-      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',contents:[],uses:[],mc:[],parent:'',note:'',hidden:false};
+      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',contents:[],uses:[],mc:[],parents:[],note:'',hidden:false};
       for(var c=0;c<cells.length;c++){var col=colMap[c];if(col&&col.set)col.set(rec,cells[c]);}
       if(!rec.cell&&!rec.seed)continue;
       if(!rec.id)rec.id=uid();
@@ -1337,7 +1399,6 @@
   document.getElementById('mDelete').onclick=deleteRec;
   document.getElementById('mDup').onclick=dupRec;
   document.getElementById('mPassage').onclick=passageFrom;
-  document.getElementById('parentGo').onclick=function(){openForm(document.getElementById('parentGo').dataset.id);};
   document.getElementById('mHide').onclick=function(){toggleHideRec(document.getElementById('mHide').dataset.id);};
   document.getElementById('hiddenBtn').onclick=toggleShowHidden;
   document.getElementById('setBtn').onclick=openSettings;
