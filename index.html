@@ -79,6 +79,8 @@
   .zoom button{border:0;background:transparent;color:var(--ink);width:34px;height:34px;cursor:pointer;font-size:16px;line-height:1}
   .zoom button:hover{background:var(--surface-2)}
   .zoom span{display:inline-flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--ink-soft);border-left:1px solid var(--border);border-right:1px solid var(--border);font-variant-numeric:tabular-nums}
+  .sortsel{font-family:var(--sans);font-size:12.5px;font-weight:540;color:var(--ink);background:var(--surface);border:1px solid var(--border-strong);border-radius:9px;padding:8px 10px;cursor:pointer}
+  .sortsel:focus{outline:2px solid var(--accent);border-color:transparent}
   .fstat{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);padding:0 4px;white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis}
   .fstat.act{color:var(--ink)}
   .fstat b{color:var(--accent);font-weight:600}
@@ -145,6 +147,12 @@
   .mcbtn.on{background:#0ea5a0;border-color:#0ea5a0;color:#fff}
   .mcmk{position:absolute;top:-4px;width:9px;height:9px;border-radius:50%;background:var(--surface);
     border:2px solid #0ea5a0;transform:translateX(-50%);z-index:8}
+  .reordergrip{position:absolute;right:9px;top:50%;transform:translateY(-50%);cursor:grab;color:var(--ink-faint);
+    font-size:15px;line-height:1;padding:6px 3px;opacity:0;transition:opacity .12s;user-select:none}
+  .rowlab:hover .reordergrip{opacity:.7}
+  .reordergrip:hover{opacity:1;color:var(--ink)}
+  .reordergrip:active{cursor:grabbing}
+  .rowlab.insbefore{box-shadow:inset 0 3px 0 -1px var(--accent)}
   .hiddenrec{opacity:.42}
   .bar.hiddenrec{filter:grayscale(.45);border-style:dotted}
   .bar:hover.hiddenrec,.rowlab.hiddenrec:hover{opacity:.75}
@@ -291,6 +299,15 @@
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
+      <select id="sortSel" class="sortsel" title="並び替え">
+        <option value="seedAsc">並び: 播種日 ↑（古い順）</option>
+        <option value="seedDesc">並び: 播種日 ↓（新しい順）</option>
+        <option value="cell">並び: 細胞名</option>
+        <option value="passage">並び: Passage</option>
+        <option value="dish">並び: ディッシュ</option>
+        <option value="added">並び: 追加順</option>
+        <option value="manual">並び: 手動（ドラッグ）</option>
+      </select>
       <div class="zoom" title="表示スケール">
         <button id="zoomOut" aria-label="縮小">−</button>
         <span id="zoomLabel">1日 58px</span>
@@ -527,6 +544,7 @@
 
   var state={records:[],settings:defaultSettings()};
   var showHidden=false;
+  var sortMode='seedAsc';
   var px=58;
   var LABELW=210, HH=54, ROWH=84, GROUPH=32;
 
@@ -560,6 +578,7 @@
     try{var raw=localStorage.getItem(KEY);if(raw){state=JSON.parse(raw);}}catch(e){state={};}
     if(!state.records)state.records=[];
     if(!state.settings)state.settings=defaultSettings();
+    if(typeof state.sortMode==='string')sortMode=state.sortMode;
     if(!state.records.length)state.records=sampleData();
     normalizeState();
   }
@@ -651,19 +670,29 @@
     var totalDays=Math.round((endT-originT)/DAY)+1;
     function xOf(s){return Math.round((d2t(s)-originT)/DAY*px);}
 
+    function sortVal(r){
+      switch(sortMode){
+        case 'seedDesc': return -d2t(r.seed);
+        case 'passage': return (typeof r.passage==='number'?r.passage:99999);
+        case 'dish': return Math.max(0,DISH_ORDER.indexOf(r.dish));
+        case 'added': return idx[r.id];
+        case 'manual': return (typeof r.order==='number'?r.order:idx[r.id]);
+        default: return d2t(r.seed); // seedAsc / cell
+      }
+    }
     var groups={},order=[];
     recs.forEach(function(r){var key=(r.cell||'').trim();if(!groups[key]){groups[key]=[];order.push(key);}groups[key].push(r);});
     order.sort(function(a,b){
-      var ma=Math.min.apply(null,groups[a].map(function(r){return d2t(r.seed);}));
-      var mb=Math.min.apply(null,groups[b].map(function(r){return d2t(r.seed);}));
+      if(sortMode==='cell')return a.localeCompare(b);
+      var ma=Math.min.apply(null,groups[a].map(sortVal));
+      var mb=Math.min.apply(null,groups[b].map(sortVal));
       if(ma!==mb)return ma-mb;
       return a.localeCompare(b);
     });
     var rows=[];
     order.forEach(function(cell){
       var arr=groups[cell].slice().sort(function(a,b){
-        var d=d2t(a.seed)-d2t(b.seed);if(d)return d;
-        var p=(a.passage||0)-(b.passage||0);if(p)return p;
+        var d=sortVal(a)-sortVal(b);if(d)return d;
         return idx[a.id]-idx[b.id];
       });
       rows.push({kind:'group',cell:cell,count:arr.length});
@@ -802,6 +831,33 @@
     save();render();
   }
 
+  // ---- 手動並べ替え（行ラベルの⠿をドラッグ）----
+  function startReorder(dragId,e){
+    e.stopPropagation();e.preventDefault();
+    var moved=false;
+    function labels(){return [].slice.call(document.querySelectorAll('.rowlab[data-id]'));}
+    function findBefore(y){var ls=labels();for(var i=0;i<ls.length;i++){var rc=ls[i].getBoundingClientRect();if(y<rc.top+rc.height/2)return ls[i];}return null;}
+    function clearInd(){labels().forEach(function(l){l.classList.remove('insbefore');});}
+    function move(ev){moved=true;clearInd();var b=findBefore(ev.clientY);if(b&&b.getAttribute('data-id')!==dragId)b.classList.add('insbefore');}
+    function up(ev){
+      document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);
+      clearInd();
+      if(moved){var b=findBefore(ev.clientY);reorderRecord(dragId,b?b.getAttribute('data-id'):null);}
+    }
+    document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
+  }
+  function reorderRecord(dragId,beforeId){
+    var ids=[].slice.call(document.querySelectorAll('.rowlab[data-id]')).map(function(l){return l.getAttribute('data-id');});
+    ids=ids.filter(function(id){return id!==dragId;});
+    var at=beforeId?ids.indexOf(beforeId):ids.length; if(at<0)at=ids.length;
+    ids.splice(at,0,dragId);
+    var omap={};ids.forEach(function(id,i){omap[id]=i;});
+    state.records.forEach(function(r){if(omap[r.id]!==undefined)r.order=omap[r.id];});
+    sortMode='manual';state.sortMode='manual';
+    var sel=document.getElementById('sortSel');if(sel)sel.value='manual';
+    save();render();
+  }
+
   function makeRowLabel(row){
     var el=document.createElement('div');
     if(row.kind==='group'){
@@ -813,16 +869,21 @@
       var dots=recUses(r).map(function(l){return '<span class="dot" style="background:'+useMeta(l).color+'"></span>';}).join('');
       if(!dots)dots='<span class="dot" style="background:var(--ink-faint)"></span>';
       el.className='rowlab'+(r.hidden?' hiddenrec':'');el.style.height=row.h+'px';el.style.cursor='pointer';
+      el.dataset.id=r.id;
       var mc=recMC(r), mcToday=mc.indexOf(todayStr())>=0;
       var mcTip=mc.length?('培地交換(MC): '+mc.join(', ')):'クリックで本日の培地交換(MC)を記録';
       el.innerHTML='<span class="cell">'+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span>'
         +(r.hidden?' <span class="hidetag">非表示</span>':'')+'</span>'
         +'<span class="meta">'+dots
         +' <span class="pass">'+passLabel(r)+'</span> · '+esc((DISH[r.dish]||{}).short||r.dish)+'</span>'
-        +'<button class="mcbtn'+(mcToday?' on':'')+'" title="'+esc(mcTip)+'">MC'+(mc.length?(' '+mc.length):'')+'</button>';
+        +'<button class="mcbtn'+(mcToday?' on':'')+'" title="'+esc(mcTip)+'">MC'+(mc.length?(' '+mc.length):'')+'</button>'
+        +'<span class="reordergrip" title="ドラッグで手動並べ替え">⠿</span>';
       el.onclick=function(){openForm(r.id);};
       var mcb=el.querySelector('.mcbtn');
       mcb.onclick=function(e){e.stopPropagation();toggleMC(r.id);};
+      var grip=el.querySelector('.reordergrip');
+      grip.addEventListener('mousedown',function(e){startReorder(r.id,e);});
+      grip.addEventListener('click',function(e){e.stopPropagation();});
     }
     return el;
   }
@@ -1267,7 +1328,8 @@
     {h:'継代元ID',get:function(r){return recParents(r).join(';');},set:function(r,v){r.parents=(''+v).split(/[;,、|\s]+/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'継代元(参考)',get:function(r){return parentsDesc(r);},set:null},
     {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}},
-    {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}}
+    {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}},
+    {h:'並び順',get:function(r){return (typeof r.order==='number')?r.order:'';},set:function(r,v){v=(''+v).trim();if(v!=='')r.order=parseFloat(v);}}
   ];
   function csvCell(v){v=(v==null?'':''+v);if(/[",\r\n]/.test(v))return '"'+v.replace(/"/g,'""')+'"';return v;}
   function exportCSV(){
@@ -1411,12 +1473,14 @@
   document.getElementById('themeBtn').onclick=toggleTheme;
   document.getElementById('zoomIn').onclick=function(){setZoom(8);};
   document.getElementById('zoomOut').onclick=function(){setZoom(-8);};
+  document.getElementById('sortSel').onchange=function(){sortMode=this.value;state.sortMode=sortMode;save();render();};
   scrim.addEventListener('click',function(e){if(e.target===scrim)closeForm();});
   setScrim.addEventListener('click',function(e){if(e.target===setScrim)closeSettings();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(scrim.classList.contains('open'))closeForm();else if(setScrim.classList.contains('open'))closeSettings();}});
 
   // ---------- init ----------
   load();
+  document.getElementById('sortSel').value=sortMode;
   renderLegend();
   render();
   setFileStatus();
