@@ -253,6 +253,10 @@
   .modal footer .spc{flex:1}
   .btn.danger{color:#fff;background:#d5405a;border-color:transparent}
   .btn.danger:hover{filter:brightness(1.05);background:#d5405a}
+  .dupwrap{display:inline-flex;align-items:center;gap:6px}
+  .dupn{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;color:var(--ink-soft)}
+  .dupn input{width:52px;font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:6px 7px;text-align:center}
+  .dupn input:focus{outline:2px solid var(--accent);border-color:transparent}
 
   /* settings */
   .setbody{padding:16px 20px;display:flex;flex-direction:column;gap:18px;max-height:66vh;overflow:auto}
@@ -349,6 +353,13 @@
         <select id="f_dish"></select>
       </div>
 
+      <div class="field full hidden" id="plateRow" style="gap:7px">
+        <label>プレート内容（複数の細胞・実験条件を選択）</label>
+        <div class="chips" id="plateChips"></div>
+        <input id="f_contents" placeholder="自由入力も可（カンマ区切り）例: HeLa, OSC19, +TGF-β, control">
+        <span class="hint">6/12/24/96 well などに複数条件をまく時に。候補は「設定」の 細胞名・実験条件 から</span>
+      </div>
+
       <div class="field full" style="gap:7px">
         <label>遺伝子型</label>
         <div class="pick g2" id="genoPick"></div>
@@ -428,7 +439,10 @@
     <footer>
       <button class="btn danger" id="mDelete" style="display:none">削除</button>
       <button class="btn ghost" id="mHide" style="display:none" title="データは残したまま表示から外す">非表示にする</button>
-      <button class="btn ghost" id="mDup" style="display:none" title="内容を引き継いで新規作成">複製</button>
+      <span class="dupwrap" id="mDupWrap" style="display:none">
+        <button class="btn ghost" id="mDup" title="この内容の複製を指定数だけ作成">複製</button>
+        <span class="dupn">×<input id="f_dupn" type="number" min="1" max="50" value="1"></span>
+      </span>
       <div class="spc"></div>
       <button class="btn ghost" id="mCancel">キャンセル</button>
       <button class="btn primary" id="mSave">保存</button>
@@ -449,6 +463,7 @@
       <div class="setsec" id="sec_reagents"></div>
       <div class="setsec" id="sec_genes"></div>
       <div class="setsec" id="sec_uses"></div>
+      <div class="setsec" id="sec_conditions"></div>
     </div>
     <footer><div class="spc"></div><button class="btn primary" id="setDone">閉じる</button></footer>
   </div>
@@ -492,7 +507,8 @@
       media:['RPMI1640 CM (10% FBS, Glutamax, P/S)'],
       reagents:['TGF-β 5 ng/mL','Puromycin 1 µg/mL','Doxycycline 1 µg/mL'],
       genes:[],
-      uses:[]
+      uses:[],
+      conditions:[]
     };
   }
 
@@ -505,7 +521,7 @@
   function normalizeState(){
     if(!state.records)state.records=[];
     if(!state.settings)state.settings=defaultSettings();
-    ['cells','media','reagents','genes','uses'].forEach(function(k){if(!Array.isArray(state.settings[k]))state.settings[k]=defaultSettings()[k];});
+    ['cells','media','reagents','genes','uses','conditions'].forEach(function(k){if(!Array.isArray(state.settings[k]))state.settings[k]=defaultSettings()[k];});
     var FATEMAP={passage:'継代',isogen:'ISOGEN回収',freeze:'凍結ストック',dna:'DNA抽出',other:'その他/回収'};
     state.records.forEach(function(r){
       if(r.seedMode===undefined){applyConc(r,r.conc||'');}
@@ -521,6 +537,7 @@
       if('fate' in r)delete r.fate;
       if(!Array.isArray(r.mc))r.mc=[];
       if(typeof r.hidden!=='boolean')r.hidden=false;
+      if(!Array.isArray(r.contents))r.contents=[];
     });
     mergeSettingsFromRecords();
   }
@@ -757,6 +774,7 @@
     var gcls=r.genotype==='KO'?'ko':'wt';
     var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(u.short)+'</span>';}).join('');
     var l2parts=[mediumShort(r.medium),concDisplay(r),volText(r)].filter(Boolean);
+    if(recContents(r).length)l2parts.push('内訳: '+recContents(r).join(', '));
     if(r.reagents)l2parts.push('+'+r.reagents);
     b.innerHTML='<span class="capln"></span><span class="arw"></span>'
       +'<div class="inner">'
@@ -766,6 +784,7 @@
       +'</div>';
     var tip=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
       +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定（進行中）')+'\n'
+      +(recContents(r).length?('内訳 '+recContents(r).join(', ')+'\n'):'')
       +'培地 '+(r.medium||'—')+'\n'
       +'濃度 '+(concDisplay(r)||'—')+'  /  '+(volText(r)||'—')+'\n'
       +'用途 '+(recUses(r).join('・')||'—')+(r.reagents?('\n添加 '+r.reagents):'')
@@ -797,6 +816,7 @@
     r.hidden=!r.hidden;save();closeForm();render();
   }
   function recMC(r){return Array.isArray(r.mc)?r.mc:[];}
+  function recContents(r){return Array.isArray(r.contents)?r.contents:[];}
   function toggleMC(id){
     var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
     if(!Array.isArray(r.mc))r.mc=[];
@@ -944,6 +964,24 @@
     inp.value=toks.join(', ');
     renderReagChips();
   }
+  function isPlateDish(){return !!(DISH[document.getElementById('f_dish').value]||{}).well;}
+  function updatePlateVisibility(){document.getElementById('plateRow').classList.toggle('hidden',!isPlateDish());}
+  function renderPlateChips(){
+    var box=document.getElementById('plateChips');
+    var active=reagTokens(document.getElementById('f_contents').value);
+    var opts=[].concat(state.settings.cells||[],state.settings.conditions||[]);
+    if(!opts.length){box.innerHTML='<span class="none">候補なし（「設定」の細胞名・実験条件で登録／下欄に自由入力）</span>';return;}
+    box.innerHTML=opts.map(function(v){var on=active.indexOf(v)>=0;return '<span class="chip'+(on?' on':'')+'" data-v="'+esc(v)+'">'+esc(v)+'</span>';}).join('');
+    box.querySelectorAll('.chip').forEach(function(ch){ch.onclick=function(){toggleContent(ch.getAttribute('data-v'));};});
+  }
+  function toggleContent(v){
+    var inp=document.getElementById('f_contents');
+    var toks=reagTokens(inp.value),i=toks.indexOf(v);
+    if(i>=0)toks.splice(i,1);else toks.push(v);
+    inp.value=toks.join(', ');renderPlateChips();
+  }
+  document.getElementById('f_contents').addEventListener('input',renderPlateChips);
+  document.getElementById('f_dish').addEventListener('change',function(){updatePlateVisibility();updateConcUnit();});
   document.getElementById('f_reagents').addEventListener('input',renderReagChips);
   document.getElementById('f_perwell').addEventListener('change',updateConcUnit);
   document.getElementById('f_gene').addEventListener('change',function(){document.getElementById('f_geno').value='KO';});
@@ -969,6 +1007,7 @@
     document.getElementById('f_perwell').checked=!!data.perWell;
     updateConcUnit();
     document.getElementById('f_reagents').value=data.reagents||'';
+    document.getElementById('f_contents').value=(data.contents||[]).join(', ');
     document.getElementById('f_note').value=data.note||'';
     setSeedMode(data.seedMode||'conc');
     renderUsePicker();
@@ -976,8 +1015,10 @@
     setGeno(data.genotype||'WT');
     fillGeneOptions(data.gene||'');
     renderReagChips();
+    updatePlateVisibility();renderPlateChips();
     document.getElementById('mDelete').style.display=r?'inline-flex':'none';
-    document.getElementById('mDup').style.display=r?'inline-flex':'none';
+    document.getElementById('mDupWrap').style.display='inline-flex';
+    document.getElementById('f_dupn').value=1;
     var hb=document.getElementById('mHide');
     hb.style.display=r?'inline-flex':'none';
     if(r){hb.textContent=r.hidden?'再表示する':'非表示にする';hb.dataset.id=r.id;}
@@ -1009,6 +1050,7 @@
       vol:volVal===''?'':parseFloat(volVal),
       perWell:document.getElementById('f_perwell').checked,
       reagents:document.getElementById('f_reagents').value.trim(),
+      contents:isPlateDish()?reagTokens(document.getElementById('f_contents').value):[],
       uses:formUses.slice(),
       mc:formMC.slice().sort(),
       note:document.getElementById('f_note').value.trim()
@@ -1030,12 +1072,12 @@
     save();closeForm();render();
   }
   function dupRec(){
-    var v=readForm();delete v.id;
-    var passVal=v.passage;
-    var preset=JSON.parse(JSON.stringify(v));
-    if(typeof passVal==='number')preset.passage=passVal+1;
-    preset.seed=todayStr();preset.harvest='';
-    closeForm();setTimeout(function(){openForm(null,preset);},20);
+    var n=Math.max(1,Math.min(50,parseInt(document.getElementById('f_dupn').value,10)||1));
+    var v=readForm();
+    if(!v.cell){alert('細胞名を入力してください。');return;}
+    if(!v.seed){alert('播種日を入力してください。');return;}
+    for(var i=0;i<n;i++){var c=JSON.parse(JSON.stringify(v));c.id=uid();c.hidden=false;state.records.push(c);}
+    mergeSettingsFromRecords();save();closeForm();render();
   }
 
   // ---------- settings ----------
@@ -1047,6 +1089,8 @@
     renderSetSection('genes','KO 遺伝子','sec_genes','例: TP53');
     renderSetSection('uses','用途 / 回収方法（追加分）','sec_uses','例: フローサイトメトリー',
       '既定（継代・ISOGEN回収・DNA抽出・凍結ストック・その他/回収）に加えて表示されます。');
+    renderSetSection('conditions','実験条件（プレート内容用）','sec_conditions','例: +TGF-β / control',
+      'well plate に複数条件をまく時の候補。細胞名と一緒にプレート内容で選べます。');
   }
   function renderSetSection(kind,title,elid,ph,note){
     var arr=state.settings[kind];
@@ -1067,7 +1111,7 @@
     input.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}};
   }
   function openSettings(){renderSettings();setScrim.classList.add('open');}
-  function closeSettings(){setScrim.classList.remove('open');renderLegend();if(scrim.classList.contains('open')){fillFormSelects();renderReagChips();fillGeneOptions(document.getElementById('f_gene').value);}render();}
+  function closeSettings(){setScrim.classList.remove('open');renderLegend();if(scrim.classList.contains('open')){fillFormSelects();renderReagChips();renderPlateChips();fillGeneOptions(document.getElementById('f_gene').value);}render();}
 
   // ---------- import / export ----------
   function downloadBlob(text,name,mime){
@@ -1103,6 +1147,7 @@
     {h:'添加薬品',get:function(r){return r.reagents;},set:function(r,v){r.reagents=v;}},
     {h:'用途',get:function(r){return recUses(r).join(' / ');},set:function(r,v){r.uses=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'培地交換',get:function(r){return recMC(r).join('; ');},set:function(r,v){r.mc=(''+v).split(/[;,、|\s]+/).map(function(s){return normDate(s.trim());}).filter(Boolean);}},
+    {h:'プレート内容',get:function(r){return recContents(r).join(' / ');},set:function(r,v){r.contents=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}},
     {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}}
   ];
@@ -1129,7 +1174,7 @@
     var recs=[];
     for(var r=1;r<rows.length;r++){
       var cells=rows[r];
-      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:[],mc:[],note:'',hidden:false};
+      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',contents:[],uses:[],mc:[],note:'',hidden:false};
       for(var c=0;c<cells.length;c++){var col=colMap[c];if(col&&col.set)col.set(rec,cells[c]);}
       if(!rec.cell&&!rec.seed)continue;
       if(!rec.id)rec.id=uid();
