@@ -253,6 +253,9 @@
   .modal footer .spc{flex:1}
   .btn.danger{color:#fff;background:#d5405a;border-color:transparent}
   .btn.danger:hover{filter:brightness(1.05);background:#d5405a}
+  .parentbox{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 11px}
+  .parentbox span{flex:1;font-size:13px;color:var(--ink);font-family:var(--mono)}
+  .parentbox .btn{padding:5px 11px;font-size:12px}
   .dupwrap{display:inline-flex;align-items:center;gap:6px}
   .dupn{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;color:var(--ink-soft)}
   .dupn input{width:52px;font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:6px 7px;text-align:center}
@@ -313,9 +316,9 @@
         Excel書出
       </button>
       <button class="btn ghost" id="importBtn" title="Excel(CSV) / JSON を1回だけ読み込み（接続はしない）">読込</button>
-      <button class="btn primary" id="addBtn">
+      <button class="btn primary" id="addBtn" title="解凍して新しく始める培養（親なし）を追加">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-        培養を追加
+        新規培養を追加
       </button>
     </div>
   </div>
@@ -342,6 +345,12 @@
       <input type="hidden" id="f_id">
       <input type="hidden" id="f_geno" value="WT">
       <input type="hidden" id="f_seedmode" value="conc">
+      <input type="hidden" id="f_parent" value="">
+
+      <div class="field full hidden" id="parentInfo">
+        <label>継代元</label>
+        <div class="parentbox"><span id="parentText"></span><button type="button" class="btn ghost" id="parentGo">たどる</button></div>
+      </div>
 
       <div class="field">
         <label for="f_cell">細胞名</label>
@@ -438,6 +447,7 @@
     </form>
     <footer>
       <button class="btn danger" id="mDelete" style="display:none">削除</button>
+      <button class="btn ghost" id="mPassage" style="display:none" title="この細胞を継代して子培養を作成（親子リンクが残ります）">▸ 継代する</button>
       <button class="btn ghost" id="mHide" style="display:none" title="データは残したまま表示から外す">非表示にする</button>
       <span class="dupwrap" id="mDupWrap" style="display:none">
         <button class="btn ghost" id="mDup" title="この内容の複製を指定数だけ作成">複製</button>
@@ -538,6 +548,7 @@
       if(!Array.isArray(r.mc))r.mc=[];
       if(typeof r.hidden!=='boolean')r.hidden=false;
       if(!Array.isArray(r.contents))r.contents=[];
+      if(typeof r.parent!=='string')r.parent='';
     });
     mergeSettingsFromRecords();
   }
@@ -571,14 +582,14 @@
     var T=todayStr();
     function rel(n){return addDaysStr(T,n);}
     var med='RPMI1640 CM (10% FBS, Glutamax, P/S)';
-    function R(o){o.medium=o.medium||med;o.genotype=o.genotype||'WT';o.gene=o.gene||'';o.perWell=!!o.perWell;o.reagents=o.reagents||'';o.note=o.note||'';o.seedMode=o.seedMode||'conc';o.concMant=(o.concMant===0||o.concMant)?o.concMant:'';o.concExp=o.concExp||DEFAULT_EXP;o.dilution=o.dilution||'';o.uses=o.uses||[];o.mc=o.mc||[];return o;}
+    function R(o){o.medium=o.medium||med;o.genotype=o.genotype||'WT';o.gene=o.gene||'';o.perWell=!!o.perWell;o.reagents=o.reagents||'';o.note=o.note||'';o.seedMode=o.seedMode||'conc';o.concMant=(o.concMant===0||o.concMant)?o.concMant:'';o.concExp=o.concExp||DEFAULT_EXP;o.dilution=o.dilution||'';o.uses=o.uses||[];o.mc=o.mc||[];o.contents=o.contents||[];o.parent=o.parent||'';return o;}
     return [
-      R({id:'s1',cell:'HeLa',dish:'d100',passage:5,seed:rel(-14),harvest:rel(-10),concMant:1.0,concExp:6,vol:'10',uses:['継代']}),
-      R({id:'s2',cell:'HeLa',dish:'d100',passage:6,seed:rel(-10),harvest:rel(-6),seedMode:'dilution',dilution:4,vol:'10',uses:['継代'],note:'希釈継代'}),
-      R({id:'s3',cell:'HeLa',dish:'w6',passage:6,seed:rel(-10),harvest:rel(-7),concMant:3.0,concExp:5,vol:'2',perWell:true,reagents:'TGF-β 5 ng/mL',uses:['ISOGEN回収','DNA抽出'],note:'RNA/DNA回収'}),
-      R({id:'s4',cell:'HeLa',dish:'d100',passage:7,seed:rel(-6),harvest:rel(-2),concMant:1.0,concExp:6,vol:'10',uses:['凍結ストック'],mc:[rel(-4)],note:'2 vials'}),
-      R({id:'s5',cell:'HeLa',dish:'w12',passage:7,seed:rel(-6),harvest:rel(0),concMant:1.5,concExp:5,vol:'1',perWell:true,genotype:'KO',gene:'GeneX',reagents:'Puromycin 1 µg/mL',uses:['継代','ISOGEN回収','DNA抽出'],note:'本日回収'}),
-      R({id:'s6',cell:'HeLa',dish:'d100',passage:8,seed:rel(0),harvest:rel(5),concMant:1.0,concExp:6,vol:'10',genotype:'KO',gene:'GeneX',uses:['継代']})
+      R({id:'s1',cell:'HeLa',dish:'d100',passage:5,seed:rel(-14),harvest:rel(-10),concMant:1.0,concExp:6,vol:'10',uses:['継代'],note:'解凍スタート'}),
+      R({id:'s2',cell:'HeLa',dish:'d100',passage:6,seed:rel(-10),harvest:rel(-6),seedMode:'dilution',dilution:4,vol:'10',uses:['継代'],parent:'s1',note:'希釈継代'}),
+      R({id:'s3',cell:'HeLa',dish:'w6',passage:6,seed:rel(-10),harvest:rel(-7),concMant:3.0,concExp:5,vol:'2',perWell:true,reagents:'TGF-β 5 ng/mL',uses:['ISOGEN回収','DNA抽出'],parent:'s1',note:'RNA/DNA回収'}),
+      R({id:'s4',cell:'HeLa',dish:'d100',passage:7,seed:rel(-6),harvest:rel(-2),concMant:1.0,concExp:6,vol:'10',uses:['凍結ストック'],parent:'s2',mc:[rel(-4)],note:'2 vials'}),
+      R({id:'s5',cell:'HeLa',dish:'w12',passage:7,seed:rel(-6),harvest:rel(0),concMant:1.5,concExp:5,vol:'1',perWell:true,genotype:'KO',gene:'GeneX',reagents:'Puromycin 1 µg/mL',uses:['継代','ISOGEN回収','DNA抽出'],parent:'s2',note:'本日回収'}),
+      R({id:'s6',cell:'HeLa',dish:'d100',passage:8,seed:rel(0),harvest:rel(5),concMant:1.0,concExp:6,vol:'10',genotype:'KO',gene:'GeneX',uses:['継代'],parent:'s5'})
     ];
   }
 
@@ -664,7 +675,9 @@
       }
       y+=row.h;
     });
-    return {rows:rows,bodyH:y,timeW:totalDays*px,totalDays:totalDays,originT:originT,px:px,xOf:xOf};
+    var recPos={};
+    rows.forEach(function(row){if(row.kind==='rec')recPos[row.rec.id]={x0:row._x0,x1:row._x1,cy:row.y+row.h/2};});
+    return {rows:rows,bodyH:y,timeW:totalDays*px,totalDays:totalDays,originT:originT,px:px,xOf:xOf,recPos:recPos};
   }
 
   function render(){
@@ -682,7 +695,7 @@
       var nHid=state.records.filter(function(r){return r.hidden;}).length;
       cv.innerHTML=nHid
         ? '<div class="empty"><h3>表示できる培養がありません</h3><p>'+nHid+' 件すべてが非表示（アーカイブ）です。ツールバーの「非表示」を押すと表示できます。</p><button class="btn primary" id="emptyAdd">培養を追加</button></div>'
-        : '<div class="empty"><h3>培養がまだありません</h3><p>「培養を追加」から播種を登録してください。</p><button class="btn primary" id="emptyAdd">最初の培養を追加</button></div>';
+        : '<div class="empty"><h3>培養がまだありません</h3><p>解凍して始める培養は「新規培養を追加」から。以降の継代は、元の細胞をクリック →「継代する」で作成します。</p><button class="btn primary" id="emptyAdd">新規培養を追加</button></div>';
       grid.appendChild(cv);
       document.getElementById('emptyAdd').onclick=function(){openForm(null);};
       return;
@@ -698,7 +711,7 @@
 
     var canvas=document.createElement('div');canvas.className='canvas';
     canvas.style.width=L.timeW+'px';canvas.style.height=L.bodyH+'px';
-    canvas.innerHTML=buildBG(L);
+    canvas.innerHTML=buildBG(L)+buildArrows(L);
     L.rows.forEach(function(row){if(row.kind==='rec')canvas.appendChild(makeBar(row,L));});
     grid.appendChild(canvas);
 
@@ -732,6 +745,21 @@
     var tx=L.xOf(todayStr());
     s+='<line x1="'+tx+'" y1="0" x2="'+tx+'" y2="'+H+'" stroke="var(--today)" stroke-width="2" stroke-dasharray="3 3"/>';
     return s+'</svg>';
+  }
+  function buildArrows(L){
+    var W=L.timeW,H=L.bodyH,paths='';
+    state.records.forEach(function(r){
+      if(!r.parent)return;
+      var p=L.recPos[r.parent],c=L.recPos[r.id];
+      if(!p||!c)return;
+      var x1=p.x1,y1=p.cy,x2=c.x0,y2=c.cy;
+      var dx=Math.max(22,Math.abs(x2-x1)*0.4);
+      paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" marker-end="url(#ah)" opacity="0.85"/>';
+      paths+='<circle cx="'+x1+'" cy="'+y1+'" r="2.6" fill="var(--ink-faint)"/>';
+    });
+    return '<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0;z-index:5;pointer-events:none" xmlns="http://www.w3.org/2000/svg">'
+      +'<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-faint)"/></marker></defs>'
+      +paths+'</svg>';
   }
 
   function makeRowLabel(row){
@@ -783,6 +811,7 @@
       +(l2parts.length?('<span class="l2">'+esc(l2parts.join(' · '))+'</span>'):'')
       +'</div>';
     var tip=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
+      +(r.parent&&parentDesc(r.parent)?('継代元 '+parentDesc(r.parent)+'\n'):'')
       +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定（進行中）')+'\n'
       +(recContents(r).length?('内訳 '+recContents(r).join(', ')+'\n'):'')
       +'培地 '+(r.medium||'—')+'\n'
@@ -883,7 +912,8 @@
       +'<span class="lg"><span class="gt wt">WT</span></span><span class="lg"><span class="gt ko">KO 遺伝子</span></span></div>'
       +'<span class="sep"></span><span class="lab">ディッシュ</span><div class="grp">'+dishes+'</div>'
       +'<span class="sep"></span><span class="lg"><span style="width:16px;border-top:2px dashed var(--today);display:inline-block"></span>本日</span>'
-      +'<span class="lg">バー ▸ 播種→回収</span>';
+      +'<span class="lg">バー ▸ 播種→回収</span>'
+      +'<span class="lg"><svg width="26" height="10"><path d="M0 5 H20" stroke="var(--ink-faint)" stroke-width="1.6" fill="none"/><path d="M18 1 L24 5 L18 9" stroke="var(--ink-faint)" stroke-width="1.6" fill="none"/></svg>継代（親→子）</span>';
   }
 
   // ---------- record form ----------
@@ -989,11 +1019,15 @@
   function openForm(id,preset){
     fillFormSelects();
     var r=id?state.records.filter(function(x){return x.id===id;})[0]:null;
-    document.getElementById('mTitle').textContent=r?'培養を編集':'培養を追加';
+    document.getElementById('mTitle').textContent=r?'培養を編集':((preset&&preset.parent)?'継代して培養を作成':'新規培養を追加');
     document.getElementById('f_id').value=r?r.id:'';
     var data=r||preset||{cell:'',dish:'d100',passage:'',seed:todayStr(),harvest:'',genotype:'WT',gene:'',medium:(state.settings.media[0]||''),seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:['継代'],mc:[],note:''};
     formUses=recUses(data).slice();
     formMC=recMC(data).slice();
+    document.getElementById('f_parent').value=data.parent||'';
+    var pInfo=document.getElementById('parentInfo'),pTxt=document.getElementById('parentText');
+    if(data.parent&&parentDesc(data.parent)){pInfo.classList.remove('hidden');pTxt.textContent=parentDesc(data.parent);document.getElementById('parentGo').dataset.id=data.parent;}
+    else pInfo.classList.add('hidden');
     document.getElementById('f_cell').value=data.cell||'';
     document.getElementById('f_dish').value=data.dish||'d100';
     document.getElementById('f_passage').value=(data.passage||data.passage===0)?data.passage:'';
@@ -1017,6 +1051,7 @@
     renderReagChips();
     updatePlateVisibility();renderPlateChips();
     document.getElementById('mDelete').style.display=r?'inline-flex':'none';
+    document.getElementById('mPassage').style.display=r?'inline-flex':'none';
     document.getElementById('mDupWrap').style.display='inline-flex';
     document.getElementById('f_dupn').value=1;
     var hb=document.getElementById('mHide');
@@ -1053,6 +1088,7 @@
       contents:isPlateDish()?reagTokens(document.getElementById('f_contents').value):[],
       uses:formUses.slice(),
       mc:formMC.slice().sort(),
+      parent:document.getElementById('f_parent').value,
       note:document.getElementById('f_note').value.trim()
     };
   }
@@ -1069,7 +1105,25 @@
     var id=document.getElementById('f_id').value;if(!id)return;
     if(!confirm('この培養を削除しますか？'))return;
     state.records=state.records.filter(function(x){return x.id!==id;});
+    state.records.forEach(function(x){if(x.parent===id)x.parent='';});
     save();closeForm();render();
+  }
+  function parentDesc(pid){
+    if(!pid)return '';
+    var p=state.records.filter(function(x){return x.id===pid;})[0];
+    if(!p)return '';
+    return p.cell+' '+passLabel(p)+'（'+((DISH[p.dish]||{}).short||p.dish)+'・播種'+p.seed+'）';
+  }
+  function passageFrom(){
+    var src=state.records.filter(function(x){return x.id===document.getElementById('f_id').value;})[0];
+    if(!src)return;
+    var preset=JSON.parse(JSON.stringify(src));
+    delete preset.id;
+    preset.parent=src.id;
+    if(typeof src.passage==='number')preset.passage=src.passage+1;
+    preset.seed=todayStr();preset.harvest='';
+    preset.uses=['継代'];preset.mc=[];preset.hidden=false;
+    closeForm();setTimeout(function(){openForm(null,preset);},20);
   }
   function dupRec(){
     var n=Math.max(1,Math.min(50,parseInt(document.getElementById('f_dupn').value,10)||1));
@@ -1148,6 +1202,8 @@
     {h:'用途',get:function(r){return recUses(r).join(' / ');},set:function(r,v){r.uses=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
     {h:'培地交換',get:function(r){return recMC(r).join('; ');},set:function(r,v){r.mc=(''+v).split(/[;,、|\s]+/).map(function(s){return normDate(s.trim());}).filter(Boolean);}},
     {h:'プレート内容',get:function(r){return recContents(r).join(' / ');},set:function(r,v){r.contents=(''+v).split(/[\/,、|]/).map(function(s){return s.trim();}).filter(Boolean);}},
+    {h:'継代元ID',get:function(r){return r.parent||'';},set:function(r,v){r.parent=(''+v).trim();}},
+    {h:'継代元(参考)',get:function(r){return parentDesc(r.parent);},set:null},
     {h:'メモ',get:function(r){return r.note;},set:function(r,v){r.note=v;}},
     {h:'非表示',get:function(r){return r.hidden?'○':'';},set:function(r,v){r.hidden=boolFromText(v);}}
   ];
@@ -1174,7 +1230,7 @@
     var recs=[];
     for(var r=1;r<rows.length;r++){
       var cells=rows[r];
-      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',contents:[],uses:[],mc:[],note:'',hidden:false};
+      var rec={id:'',cell:'',dish:'d100',passage:'',seed:'',harvest:'',genotype:'WT',gene:'',medium:'',seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',contents:[],uses:[],mc:[],parent:'',note:'',hidden:false};
       for(var c=0;c<cells.length;c++){var col=colMap[c];if(col&&col.set)col.set(rec,cells[c]);}
       if(!rec.cell&&!rec.seed)continue;
       if(!rec.id)rec.id=uid();
@@ -1280,6 +1336,8 @@
   document.getElementById('mSave').onclick=saveForm;
   document.getElementById('mDelete').onclick=deleteRec;
   document.getElementById('mDup').onclick=dupRec;
+  document.getElementById('mPassage').onclick=passageFrom;
+  document.getElementById('parentGo').onclick=function(){openForm(document.getElementById('parentGo').dataset.id);};
   document.getElementById('mHide').onclick=function(){toggleHideRec(document.getElementById('mHide').dataset.id);};
   document.getElementById('hiddenBtn').onclick=toggleShowHidden;
   document.getElementById('setBtn').onclick=openSettings;
