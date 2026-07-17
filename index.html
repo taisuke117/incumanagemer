@@ -702,10 +702,10 @@
     rows.forEach(function(row){
       row.y=y; row.h=(row.kind==='group')?GROUPH:ROWH;
       if(row.kind==='rec'){
-        // 端を日付セルの内側へインセット（同日の親子間に矢印スペースを作る）
-        var pad=Math.min(20,px*0.42);
-        var r=row.rec, x0=xOf(r.seed)+pad, x1=xOf(effHarvest(r))-pad;
-        if(x1-x0<48)x1=x0+48;
+        // 播種点＝その日セルの左から4/5、回収点＝その日セルの左から1/5
+        // → 同日に回収→継代したとき、その日セルの中央3/5が矢印スペースになる
+        var r=row.rec, x0=xOf(r.seed)+px*0.8, x1=xOf(effHarvest(r))+px*0.2;
+        if(x1-x0<40)x1=x0+40;
         row._x0=x0; row._x1=x1;
       }
       y+=row.h;
