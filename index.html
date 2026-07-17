@@ -214,6 +214,23 @@
   .dhead.sun .dnum,.dhead.sun .dow{color:#d0567b}
   .mstrip{position:absolute;top:4px;font-size:11px;font-weight:640;letter-spacing:.02em;color:var(--ink);padding-left:6px;border-left:2px solid var(--border-strong)}
 
+  /* ---- 系統樹（閲覧のみ）---- */
+  .treeboard{padding:16px 18px}
+  .treehint{font-size:11.5px;color:var(--ink-faint);margin-bottom:12px}
+  #treeCanvas{position:relative}
+  .tnode{position:absolute;border-radius:9px;padding:7px 9px 7px 12px;overflow:hidden;
+    border:1px solid var(--tln);background:var(--tbg);box-shadow:0 1px 2px rgba(20,30,45,.06);
+    display:flex;flex-direction:column;gap:3px;z-index:2}
+  .tnode .capln{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tcap);border-radius:9px 0 0 9px}
+  .tnode .n1{font-size:12px;font-weight:640;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+  .tnode .n1 .p{font-family:var(--mono);color:var(--tcap)}
+  .tnode .n2{font-family:var(--mono);font-size:10px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tnode .n3{display:flex;gap:3px;flex-wrap:wrap;overflow:hidden}
+  .tnode .dishchip{font-family:var(--mono);font-size:9.5px;padding:0 5px;border-radius:4px;border:1px solid var(--border);color:var(--ink-soft);font-weight:600;background:var(--surface-3)}
+  .tnode.hiddenrec{opacity:.45}
+  .tnode.rootnode{border-style:dashed;border-width:1.5px}
+  .treecol{position:absolute;top:0;font-size:10px;letter-spacing:.05em;color:var(--ink-faint);font-weight:660;text-transform:uppercase}
+
   .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;color:var(--ink-soft);padding:30px}
   .empty h3{margin:0;color:var(--ink);font-weight:620;font-size:16px}
   .empty p{margin:0;font-size:13px;max-width:340px;line-height:1.5}
@@ -321,6 +338,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8.4 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8.4a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         設定
       </button>
+      <button class="btn ghost" id="viewBtn" title="タイムライン / 系統樹（閲覧のみ）を切り替え">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h5M4 6v12h5M9 6a2 2 0 1 0 4 0 2 2 0 1 0-4 0M9 18a2 2 0 1 0 4 0 2 2 0 1 0-4 0M13 6h3a2 2 0 0 1 2 2v0a2 2 0 0 0 2 2h1M13 18h3a2 2 0 0 0 2-2v0a2 2 0 0 1 2-2h1"/></svg>
+        系統樹
+      </button>
       <button class="btn ghost" id="hiddenBtn" title="非表示（アーカイブ）にした培養の表示を切り替え">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
         非表示
@@ -350,6 +371,11 @@
 
   <div class="board" id="board">
     <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="board treeboard" id="treeBoard" style="display:none">
+    <div class="treehint" id="treeHint"></div>
+    <div id="treeCanvas"></div>
   </div>
 </div>
 
@@ -715,9 +741,97 @@
     return {rows:rows,bodyH:y,timeW:totalDays*px,totalDays:totalDays,originT:originT,px:px,xOf:xOf,recPos:recPos};
   }
 
+  // ---------- 系統樹ビュー（閲覧のみ）----------
+  var viewMode='timeline';
+  function toggleView(){viewMode=(viewMode==='tree')?'timeline':'tree';render();}
+  function updateViewBtn(){
+    var b=document.getElementById('viewBtn');if(!b)return;
+    b.lastChild.nodeValue=' '+(viewMode==='tree'?'タイムライン':'系統樹')+' ';
+    b.classList.toggle('primary',viewMode==='tree');b.classList.toggle('ghost',viewMode!=='tree');
+  }
+  function renderTree(){
+    var canvas=document.getElementById('treeCanvas'),hint=document.getElementById('treeHint');
+    var recs=state.records.filter(function(r){return showHidden||!r.hidden;});
+    if(!recs.length){canvas.innerHTML='';canvas.style.height='auto';hint.textContent='表示できる培養がありません。';return;}
+    var map={};recs.forEach(function(r){map[r.id]=r;});
+    function pars(r){return recParents(r).filter(function(p){return map[p];});}
+    var depth={},visiting={};
+    function dep(id){
+      if(depth[id]!==undefined)return depth[id];
+      if(visiting[id])return 0;
+      visiting[id]=1;
+      var d=0;pars(map[id]).forEach(function(p){var v=dep(p)+1;if(v>d)d=v;});
+      visiting[id]=0;depth[id]=d;return d;
+    }
+    recs.forEach(function(r){dep(r.id);});
+    var maxD=0;recs.forEach(function(r){if(depth[r.id]>maxD)maxD=depth[r.id];});
+    var cols=[];for(var i=0;i<=maxD;i++)cols.push([]);
+    recs.forEach(function(r){cols[depth[r.id]].push(r.id);});
+    var yIdx={};
+    cols[0].sort(function(a,b){var d=d2t(map[a].seed)-d2t(map[b].seed);if(d)return d;return (map[a].cell||'').localeCompare(map[b].cell||'');});
+    cols[0].forEach(function(id,i){yIdx[id]=i;});
+    for(var c=1;c<cols.length;c++){
+      cols[c].sort(function(a,b){
+        function key(id){var ps=pars(map[id]);if(!ps.length)return 9999;var s=0;ps.forEach(function(p){s+=(yIdx[p]!==undefined?yIdx[p]:0);});return s/ps.length;}
+        var ka=key(a),kb=key(b);if(ka!==kb)return ka-kb;
+        var d=d2t(map[a].seed)-d2t(map[b].seed);if(d)return d;
+        return (map[a].cell||'').localeCompare(map[b].cell||'');
+      });
+      cols[c].forEach(function(id,i){yIdx[id]=i;});
+    }
+    var NW=200,NH=66,CGAP=76,RGAP=12,TOP=22;
+    function colX(d){return d*(NW+CGAP);}
+    var pos={};
+    cols.forEach(function(col,d){col.forEach(function(id,i){pos[id]={x:colX(d),y:TOP+i*(NH+RGAP)};});});
+    var rowsMax=Math.max.apply(null,cols.map(function(c){return c.length;}));
+    var W=colX(maxD)+NW+10,H=TOP+rowsMax*(NH+RGAP)+10;
+    canvas.style.width=W+'px';canvas.style.height=H+'px';
+    var paths='';
+    recs.forEach(function(r){
+      var c2=pos[r.id];
+      pars(r).forEach(function(pid){
+        var p=pos[pid];if(!p)return;
+        var x1=p.x+NW,y1=p.y+NH/2,x2=c2.x,y2=c2.y+NH/2;
+        var dx=Math.max(28,(x2-x1)*0.5);
+        paths+='<path d="M '+x1+' '+y1+' C '+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--arrow)" stroke-width="2" marker-end="url(#tah)"/>';
+      });
+    });
+    var svg='<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0;z-index:1;pointer-events:none" xmlns="http://www.w3.org/2000/svg">'
+      +'<defs><marker id="tah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--arrow)"/></marker></defs>'
+      +paths+'</svg>';
+    var heads='';
+    cols.forEach(function(col,d){heads+='<div class="treecol" style="left:'+colX(d)+'px">'+(d===0?'解凍 / 起点':'継代 '+d+' 代目')+'</div>';});
+    canvas.innerHTML=svg+heads;
+    recs.forEach(function(r){
+      var p=pos[r.id],col=primColor(r);
+      var n=document.createElement('div');
+      n.className='tnode'+(r.hidden?' hiddenrec':'')+(pars(r).length?'':' rootnode');
+      n.style.left=p.x+'px';n.style.top=p.y+'px';n.style.width=NW+'px';n.style.height=NH+'px';
+      n.style.setProperty('--tcap',col);
+      n.style.setProperty('--tbg','color-mix(in srgb,'+col+' 12%,transparent)');
+      n.style.setProperty('--tln','color-mix(in srgb,'+col+' 38%,transparent)');
+      var gcls=r.genotype==='KO'?'ko':'wt';
+      var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(u.short)+'</span>';}).join('');
+      n.innerHTML='<span class="capln"></span>'
+        +'<span class="n1"><span class="p">'+passLabel(r)+'</span> '+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span></span>'
+        +'<span class="n2"><span class="dishchip">'+esc((DISH[r.dish]||{}).short||r.dish)+'</span> 播種 '+esc(r.seed)+(r.harvest?(' → '+esc(r.harvest)):'')+'</span>'
+        +(uchips?('<span class="n3">'+uchips+'</span>'):'');
+      n.title=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
+        +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定')+'\n'
+        +'用途 '+(recUses(r).join('・')||'—')+(parentsDesc(r)?('\n継代元 '+parentsDesc(r)):'')+(r.note?('\nメモ '+r.note):'');
+      canvas.appendChild(n);
+    });
+    hint.textContent='系統樹（閲覧のみ・編集不可）：左＝解凍/起点 → 右へ継代が進みます。'+recs.length+' 件 / '+(maxD+1)+' 世代。破線枠＝起点（解凍）。';
+  }
+
   function render(){
     renderToday();
     updateHiddenBtn();
+    updateViewBtn();
+    var isTree=(viewMode==='tree');
+    document.getElementById('board').style.display=isTree?'none':'';
+    document.getElementById('treeBoard').style.display=isTree?'':'none';
+    if(isTree){renderTree();return;}
     var L=computeLayout();
     var grid=document.getElementById('grid');
     document.documentElement.style.setProperty('--labelw',LABELW+'px');
@@ -1465,6 +1579,7 @@
   document.getElementById('mPassage').onclick=passageFrom;
   document.getElementById('mHide').onclick=function(){toggleHideRec(document.getElementById('mHide').dataset.id);};
   document.getElementById('hiddenBtn').onclick=toggleShowHidden;
+  document.getElementById('viewBtn').onclick=toggleView;
   document.getElementById('setBtn').onclick=openSettings;
   document.getElementById('setClose').onclick=closeSettings;
   document.getElementById('setDone').onclick=closeSettings;
