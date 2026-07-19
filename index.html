@@ -306,9 +306,41 @@
   @media (max-width:560px){.form{grid-template-columns:1fr}.pick.g4{grid-template-columns:repeat(2,1fr)}}
   .file-hidden{display:none}
   .hidden{display:none!important}
+
+  /* ---- 印刷メニュー ---- */
+  .printwrap{position:relative;display:inline-flex}
+  .printmenu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;display:none;flex-direction:column;
+    min-width:200px;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;
+    box-shadow:var(--shadow);overflow:hidden;padding:5px}
+  .printmenu.open{display:flex}
+  .printmenu button{border:0;background:transparent;color:var(--ink);text-align:left;font-family:var(--sans);
+    font-size:13px;padding:9px 11px;border-radius:7px;cursor:pointer}
+  .printmenu button:hover{background:var(--surface-2)}
+
+  /* ---- 印刷レイアウト ---- */
+  .printhead{display:none}
+  @media print{
+    :root{--bg:#fff;--surface:#fff}
+    body,.wrap{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .top,.legend,.printwrap,.board.treeboard{display:none!important}
+    .printhead{display:block;margin:0 0 10px}
+    .printhead h1{font-size:16px;margin:0 0 2px}
+    .printhead .sub{font-size:11px;color:#555}
+    /* 既定は両方。body の data-print で切替 */
+    body[data-print="today"] .board{display:none!important}
+    body[data-print="calendar"] .today{display:none!important}
+    .today{box-shadow:none;border:1px solid #bbb}
+    .board{max-height:none;overflow:visible;box-shadow:none;border:1px solid #bbb}
+    .grid{break-inside:avoid}
+    .mcbtn,.reordergrip,.linkknob{display:none!important}
+    .titem{break-inside:avoid}
+    @page{margin:12mm}
+  }
 </style>
 
 <div class="wrap">
+  <div class="printhead" id="printHead"></div>
   <div class="top">
     <div class="title">
       <h1>細胞パッセージ管理</h1>
@@ -358,6 +390,17 @@
         Excel書出
       </button>
       <button class="btn ghost" id="importBtn" title="Excel(CSV) / JSON を1回だけ読み込み（接続はしない）">読込</button>
+      <span class="printwrap">
+        <button class="btn ghost" id="printBtn" title="印刷（範囲を選んで）">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/></svg>
+          印刷
+        </button>
+        <div class="printmenu" id="printMenu">
+          <button data-print="today">本日のタスクだけ</button>
+          <button data-print="calendar">カレンダーだけ</button>
+          <button data-print="both">本日のタスク＋カレンダー</button>
+        </div>
+      </span>
       <button class="btn primary" id="addBtn" title="解凍して新しく始める培養（親なし）を追加">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
         新規培養を追加
@@ -1063,6 +1106,18 @@
     b.classList.toggle('primary',showHidden);b.classList.toggle('ghost',!showHidden);
   }
   function toggleShowHidden(){showHidden=!showHidden;render();}
+  function doPrint(what){
+    document.getElementById('printMenu').classList.remove('open');
+    if((what==='calendar'||what==='both')&&viewMode==='tree'){viewMode='timeline';render();}
+    var labels={today:'本日のタスク',calendar:'カレンダー（タイムライン）',both:'本日のタスク＋カレンダー'};
+    var d=taskDate||todayStr(), dow=DOW[new Date(d2t(d)).getDay()];
+    document.getElementById('printHead').innerHTML='<h1>細胞パッセージ管理 — '+esc(labels[what]||'')+'</h1>'
+      +'<div class="sub">対象日 '+esc(d)+'（'+dow+'）／印刷日 '+todayStr()+'</div>';
+    document.body.setAttribute('data-print',what);
+    var clean=function(){document.body.removeAttribute('data-print');window.removeEventListener('afterprint',clean);};
+    window.addEventListener('afterprint',clean);
+    setTimeout(function(){window.print();},60);
+  }
   function toggleHideRec(id){
     var r=state.records.filter(function(x){return x.id===id;})[0];if(!r)return;
     r.hidden=!r.hidden;save();closeForm();render();
@@ -1580,6 +1635,9 @@
   document.getElementById('mHide').onclick=function(){toggleHideRec(document.getElementById('mHide').dataset.id);};
   document.getElementById('hiddenBtn').onclick=toggleShowHidden;
   document.getElementById('viewBtn').onclick=toggleView;
+  document.getElementById('printBtn').onclick=function(e){e.stopPropagation();document.getElementById('printMenu').classList.toggle('open');};
+  document.querySelectorAll('#printMenu button').forEach(function(b){b.onclick=function(){doPrint(b.getAttribute('data-print'));};});
+  document.addEventListener('click',function(e){var m=document.getElementById('printMenu');if(m.classList.contains('open')&&!e.target.closest('.printwrap'))m.classList.remove('open');});
   document.getElementById('setBtn').onclick=openSettings;
   document.getElementById('setClose').onclick=closeSettings;
   document.getElementById('setDone').onclick=closeSettings;
