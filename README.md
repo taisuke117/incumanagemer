@@ -112,4 +112,6 @@ This repository is the **public, generic version**. The sample data it ships wit
 
 ## License / ライセンス
 
-未定（公開時に決定）。To be decided before publication — until a `LICENSE` file is added, all rights are reserved by default.
+[MIT](LICENSE) — free to use, modify and redistribute, with no warranty.
+
+[MIT ライセンス](LICENSE)。改変・再配布とも自由（無保証）。
