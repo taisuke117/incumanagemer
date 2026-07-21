@@ -7,7 +7,6 @@
 ![Cell Passage Manager — timeline with today's tasks and passage lineage](docs/screenshot.png)
 
 <details>
-<summary>English UI / 英語表示（クリックで展開）</summary>
 
 ![Cell Passage Manager in English](docs/screenshot-en.png)
 
