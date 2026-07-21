@@ -13,7 +13,6 @@
 
 </details>
 
-*Sample data shown (`HeLa`, `GeneX`) — placeholders only. / 画面はサンプルデータ（`HeLa`, `GeneX`）です。*
 
 [English](#english) ・ [日本語](#日本語)
 
