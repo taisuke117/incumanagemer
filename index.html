@@ -1,4 +1,5 @@
-<title>細胞パッセージ管理 — Cell Passage Timeline</title>
+<meta charset="utf-8">
+<title>細胞パッセージ管理 — Cell Passage Manager</title>
 <style>
   :root{
     --bg:#eef1f5; --surface:#ffffff; --surface-2:#f2f5f9; --surface-3:#e8edf3;
@@ -340,7 +341,7 @@
 </style>
 
 <div class="wrap">
-  <div class="printhead" id="printHead"></div>
+  <div class="printhead" data-i18n-skip id="printHead"></div>
   <div class="top">
     <div class="title">
       <h1>細胞パッセージ管理</h1>
@@ -359,9 +360,13 @@
       </select>
       <div class="zoom" title="表示スケール">
         <button id="zoomOut" aria-label="縮小">−</button>
-        <span id="zoomLabel">1日 58px</span>
+        <span data-i18n-skip id="zoomLabel">1日 58px</span>
         <button id="zoomIn" aria-label="拡大">＋</button>
       </div>
+      <button class="btn ghost" data-i18n-skip id="langBtn" title="日本語 / English">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.8 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.8-3.8-9S9.5 5.7 12 3z"/></svg>
+        <span id="langLabel">EN</span>
+      </button>
       <button class="btn ghost" id="themeBtn" title="ライト / ダーク切り替え">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6l-1.5-1.5M19.5 19.5 18 18M18 6l1.5-1.5M4.5 19.5 6 18"/><circle cx="12" cy="12" r="4"/></svg>
         表示
@@ -370,11 +375,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8.4 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8.4a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         設定
       </button>
-      <button class="btn ghost" id="viewBtn" title="タイムライン / 系統樹（閲覧のみ）を切り替え">
+      <button class="btn ghost" data-i18n-skip id="viewBtn" title="タイムライン / 系統樹（閲覧のみ）を切り替え">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h5M4 6v12h5M9 6a2 2 0 1 0 4 0 2 2 0 1 0-4 0M9 18a2 2 0 1 0 4 0 2 2 0 1 0-4 0M13 6h3a2 2 0 0 1 2 2v0a2 2 0 0 0 2 2h1M13 18h3a2 2 0 0 0 2-2v0a2 2 0 0 1 2-2h1"/></svg>
         系統樹
       </button>
-      <button class="btn ghost" id="hiddenBtn" title="非表示（アーカイブ）にした培養の表示を切り替え">
+      <button class="btn ghost" data-i18n-skip id="hiddenBtn" title="非表示（アーカイブ）にした培養の表示を切り替え">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
         非表示
       </button>
@@ -383,7 +388,7 @@
         JSONを開く
       </button>
       <button class="btn ghost" id="saveAsBtn" title="保存先のJSONを新規作成／変更（以降そこへ自動保存）">保存先…</button>
-      <span class="fstat" id="fileStatus"></span>
+      <span class="fstat" data-i18n-skip id="fileStatus"></span>
       <span class="tbsep"></span>
       <button class="btn ghost" id="exportBtn" title="Excelで開けるCSVを書き出し">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v11m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
@@ -417,7 +422,7 @@
   </div>
 
   <div class="board treeboard" id="treeBoard" style="display:none">
-    <div class="treehint" id="treeHint"></div>
+    <div class="treehint" data-i18n-skip id="treeHint"></div>
     <div id="treeCanvas"></div>
   </div>
 </div>
@@ -428,7 +433,7 @@
 <div class="scrim" id="scrim">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
     <header>
-      <h2 id="mTitle">培養を追加</h2>
+      <h2 data-i18n-skip id="mTitle">培養を追加</h2>
       <button class="x" id="mClose" aria-label="閉じる">×</button>
     </header>
     <form class="form" id="form" autocomplete="off">
@@ -454,7 +459,7 @@
       <div class="field full hidden" id="plateRow" style="gap:7px">
         <label>プレート内容（複数の細胞・実験条件を選択）</label>
         <div class="chips" id="plateChips"></div>
-        <input id="f_contents" placeholder="自由入力も可（カンマ区切り）例: HeLa, OSC19, +TGF-β, control">
+        <input id="f_contents" placeholder="自由入力も可（カンマ区切り）例: HeLa, A549, +TGF-β, control">
         <span class="hint">6/12/24/96 well などに複数条件をまく時に。候補は「設定」の 細胞名・実験条件 から</span>
       </div>
 
@@ -537,7 +542,7 @@
     <footer>
       <button class="btn danger" id="mDelete" style="display:none">削除</button>
       <button class="btn ghost" id="mPassage" style="display:none" title="この細胞を継代して子培養を作成（親子リンクが残ります）">▸ 継代する</button>
-      <button class="btn ghost" id="mHide" style="display:none" title="データは残したまま表示から外す">非表示にする</button>
+      <button class="btn ghost" data-i18n-skip id="mHide" style="display:none" title="データは残したまま表示から外す">非表示にする</button>
       <span class="dupwrap" id="mDupWrap" style="display:none">
         <button class="btn ghost" id="mDup" title="この内容の複製を指定数だけ作成">複製</button>
         <span class="dupn">×<input id="f_dupn" type="number" min="1" max="50" value="1"></span>
@@ -572,6 +577,127 @@
 (function(){
   "use strict";
   var KEY='cellPassageDB.v3';
+
+  // ---------- i18n（日本語をキーにした対訳。未登録は原文のまま）----------
+  var LANG='ja';
+  var EN={
+    // ヘッダ / ツールバー
+    '細胞パッセージ管理':'Cell Passage Manager',
+    '播種 → 回収予定を時間軸に並べ、':'Cultures on a timeline from seeding to planned harvest — ',
+    '継代・ISOGEN回収・凍結':'passage, RNA (ISOGEN), freezing',
+    'を見わたす培養タイムライン':' at a glance.',
+    '並び替え':'Sort','表示スケール':'Zoom','1日 ':'1 day = ',
+    '並び: 播種日 ↑（古い順）':'Sort: Seeding ↑ (oldest)','並び: 播種日 ↓（新しい順）':'Sort: Seeding ↓ (newest)',
+    '並び: 細胞名':'Sort: Cell name','並び: Passage':'Sort: Passage','並び: ディッシュ':'Sort: Vessel',
+    '並び: 追加順':'Sort: Added','並び: 手動（ドラッグ）':'Sort: Manual (drag)',
+    '表示':'Theme','ライト / ダーク切り替え':'Toggle light / dark',
+    '系統樹':'Lineage','タイムライン':'Timeline','タイムライン / 系統樹（閲覧のみ）を切り替え':'Switch Timeline / Lineage tree (read-only)',
+    '非表示':'Archived','非表示も表示中':'Showing archived','非表示（アーカイブ）にした培養の表示を切り替え':'Show / hide archived cultures',
+    '設定':'Settings','培地・添加薬品・KO遺伝子の設定':'Manage media, reagents, KO genes',
+    'JSONを開く':'Open JSON','JSONファイルを開いて接続。以降そのファイルへ毎回自動保存します':'Open a JSON file and connect. Every change is then auto-saved to it.',
+    '保存先…':'Save to…','保存先のJSONを新規作成／変更（以降そこへ自動保存）':'Create / change the JSON destination (auto-save from then on)',
+    'Excel書出':'Export CSV','Excelで開けるCSVを書き出し':'Export a CSV that opens in Excel',
+    '読込':'Import','Excel(CSV) / JSON を1回だけ読み込み（接続はしない）':'Import CSV / JSON once (no auto-save connection)',
+    '印刷':'Print','印刷（範囲を選んで）':'Print (choose what to print)',
+    '本日のタスクだけ':"Today's tasks only",'カレンダーだけ':'Calendar only','本日のタスク＋カレンダー':"Today's tasks + calendar",
+    '新規培養を追加':'New culture','解凍して新しく始める培養（親なし）を追加':'Add a culture started from a thaw (no parent)',
+    '未接続':'Not connected','(ブラウザ内保存)':'(saved in browser)','自動保存':'auto-saved','保存中…':'saving…','保存失敗':'save failed','接続':'Connect',
+    // 凡例
+    '用途':'Purpose','遺伝子型':'Genotype','ディッシュ':'Vessel','本日':'Today',
+    'バー ▸ 播種→回収':'bar ▸ seeding → harvest','継代（親→子）':'passage (parent → child)','KO 遺伝子':'KO gene',
+    // 用途（既定）
+    '継代':'Passage','ISOGEN回収':'ISOGEN (RNA)','DNA抽出':'DNA extraction','凍結ストック':'Freeze stock','その他/回収':'Other / harvest','❄凍結':'❄Freeze','回収':'Harvest',
+    // 本日のタスク
+    '本日のタスク':"Today's tasks",'のタスク':' tasks','明日':'Tomorrow','昨日':'Yesterday','本日へ':'Go to today',
+    '前日':'Previous day','翌日':'Next day','回収 / 処理':'Harvest / process','播種':'Seeding',
+    '本日の予定はありません。':'Nothing scheduled.','やること: ':'To do: ','播種日 ':'Seeded ','播種 ':'Seeded ','回収予定 ':'Harvest ','回収予定 未定':'Harvest TBD','培養':'day ',
+    // タイムライン
+    '細胞 / Passage':'Cell / Passage','培養がまだありません':'No cultures yet',
+    '解凍して始める培養は「新規培養を追加」から。以降の継代は、元の細胞をクリック →「継代する」で作成します。':'Start a thawed culture with “New culture”. For later passages, click the source culture → “Passage”.',
+    '表示できる培養がありません':'Nothing to show','培養を追加':'Add culture',
+    'クリックで本日の培地交換(MC)を記録':"Click to log today's medium change (MC)",'培地交換(MC): ':'Medium change (MC): ','培地交換(MC) ':'Medium change (MC) ',
+    'ドラッグで手動並べ替え':'Drag to reorder','ドラッグして別の培養へつなぐ（＝この細胞をその条件で培養）':'Drag onto another culture to link (this cell continues under those conditions)',
+    'すでにつながっています。':'Already linked.','その向きだと系譜が循環します。新しい方（子）へ向けてつないでください。':'That direction would create a cycle. Link toward the newer (child) culture.',
+    // 系統樹
+    '解凍 / 起点':'Thaw / origin','継代 ':'Passage gen ',' 代目':'',
+    '系統樹（閲覧のみ・編集不可）：左＝解凍/起点 → 右へ継代が進みます。':'Lineage tree (read-only): left = thaw/origin, generations progress to the right. ',
+    ' 世代。破線枠＝起点（解凍）。':' generations. Dashed border = origin (thaw).','表示できる培養がありません。':'Nothing to show.',
+    // フォーム
+    '培養を編集':'Edit culture','継代して培養を作成':'Create culture by passage','細胞名':'Cell name','ディッシュの種類':'Vessel type',
+    'プレート内容（複数の細胞・実験条件を選択）':'Plate contents (select multiple cells / conditions)',
+    '6/12/24/96 well などに複数条件をまく時に。候補は「設定」の 細胞名・実験条件 から':'For seeding several cells/conditions on one plate. Options come from Settings (cell names / conditions).',
+    '継代元（親培養・複数可）':'Derived from (parent culture, multiple allowed)',
+    'チップをクリックでたどる／× で解除。タイムラインで培養の右端●を別の培養へドラッグしてもつながります':'Click a chip to open it, × to unlink. You can also drag a culture’s right-edge dot onto another culture.',
+    'Passage 数':'Passage number','播種日':'Seeding date','回収予定日':'Planned harvest','空欄なら「進行中」（破線）':'Leave empty for “ongoing” (dashed)',
+    '培地':'Medium','播種濃度':'Seeding density','濃度を指定':'Specify density','希釈のみ':'Dilution only','希釈　1 :':'Dilution 1 :',
+    '数値だけ入力（例: 5.0 → 5.0×10^5 cells/mL）。「希釈のみ」なら 1:x の x だけ入力。':'Enter the number only (e.g. 5.0 → 5.0×10^5 cells/mL). For “Dilution only”, enter just x of 1:x.',
+    'ボリューム':'Volume','ウェルあたり（/well）— 濃度・容量をウェル単位で扱う':'Per well (/well) — treat density and volume per well',
+    '添加薬品':'Reagents','よく使う薬品は「設定」に登録するとチップで選べます':'Register frequently used reagents in Settings to pick them as chips',
+    '用途 / 回収方法（複数選択可）':'Purpose / harvest method (multiple)',
+    '培地交換（MC）記録':'Medium change (MC) log','行の「MC」ボタンでも本日分をワンクリック記録できます':'The “MC” button on each row logs today in one click',
+    'メモ':'Note','任意':'optional','WT（野生型）':'WT (wild type)','KO（ノックアウト）':'KO (knockout)','遺伝子':'Gene',
+    '選択肢は「設定」から追加・削除できます':'Add / remove options in Settings','（未登録：設定で追加）':'(none — add in Settings)',
+    '削除':'Delete','▸ 継代する':'▸ Passage','この細胞を継代して子培養を作成（親子リンクが残ります）':'Create a child culture from this one (keeps the parent link)',
+    '非表示にする':'Archive','再表示する':'Unarchive','データは残したまま表示から外す':'Hide from view but keep the data',
+    '複製':'Duplicate','この内容の複製を指定数だけ作成':'Create this many copies of these settings',
+    'キャンセル':'Cancel','保存':'Save','閉じる':'Close',
+    '細胞名を入力してください。':'Please enter a cell name.','播種日を入力してください。':'Please enter a seeding date.','この培養を削除しますか？':'Delete this culture?',
+    // 設定
+    '設定 — マスタ管理':'Settings — master lists','追加':'Add','未登録です。下の欄から追加してください。':'Nothing registered yet. Add below.',
+    '添加薬品（プリセット）':'Reagents (presets)','用途 / 回収方法（追加分）':'Purpose / harvest method (custom)',
+    '既定（継代・ISOGEN回収・DNA抽出・凍結ストック・その他/回収）に加えて表示されます。':'Shown in addition to the built-ins (Passage, ISOGEN, DNA extraction, Freeze stock, Other).',
+    '実験条件（プレート内容用）':'Experimental conditions (for plate contents)',
+    'well plate に複数条件をまく時の候補。細胞名と一緒にプレート内容で選べます。':'Options for multi-condition plates; selectable together with cell names in plate contents.',
+    // 入出力・印刷
+    '読み込めませんでした。':'Could not import.','カレンダー（タイムライン）':'Calendar (timeline)','対象日 ':'Date ','／印刷日 ':' / printed ',
+    // その他
+    '内訳: ':'contents: ','内訳 ':'contents ','希釈 1:':'dil. 1:','希釈':'dilution','継代元 ':'From ','・播種':', seeded ','（培養':' (day ','件）':')',
+    '例: HeLa':'e.g. HeLa','例: TP53':'e.g. TP53','例: DMEM (10% FBS, P/S)':'e.g. DMEM (10% FBS, P/S)',
+    '例: TGF-β 5 ng/mL':'e.g. TGF-β 5 ng/mL','例: フローサイトメトリー':'e.g. Flow cytometry','例: +TGF-β / control':'e.g. +TGF-β / control',
+    '例: 10':'e.g. 10','例: 5.0':'e.g. 5.0','例: 6':'e.g. 6',
+    '自由入力も可（カンマ区切り）例: HeLa, A549, +TGF-β, control':'Free text allowed (comma separated), e.g. HeLa, A549, +TGF-β, control',
+    '自由記述も可（カンマ区切り）例: TGF-β 5 ng/mL, Puromycin 1 µg/mL':'Free text allowed (comma separated), e.g. TGF-β 5 ng/mL, Puromycin 1 µg/mL',
+    '解凍スタート':'thaw start','本日回収':'harvest today','希釈継代':'split by dilution','RNA/DNA回収':'RNA/DNA harvest','2 vials':'2 vials'
+  };
+  function plural(n,one,many){return n+' '+(n===1?one:many);}
+  function cnt(n){return LANG==='en'?plural(n,'item','items'):(n+' 件');}
+  // 固定文言はDOMを走査して差し替える（原文はWeakMapに保持し、再切替でも復元できる）
+  var origText=new WeakMap();
+  function trKeepSpace(s){
+    var m=s.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    var core=m[2]; if(!core)return s;
+    var tr=t(core); return tr===core?s:(m[1]+tr+m[3]);
+  }
+  function applyI18n(root){
+    root=root||document.body;
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false),n;
+    while(n=w.nextNode()){
+      if(n.parentNode&&/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName))continue;
+      if(n.parentElement&&n.parentElement.closest('[data-i18n-skip]'))continue;
+      var o=origText.get(n);
+      if(o===undefined){o=n.nodeValue;origText.set(n,o);}
+      var tr=trKeepSpace(o);
+      if(n.nodeValue!==tr)n.nodeValue=tr;
+    }
+    root.querySelectorAll('[placeholder]').forEach(function(e){
+      if(e.dataset.i18nPh===undefined)e.dataset.i18nPh=e.getAttribute('placeholder')||'';
+      e.setAttribute('placeholder',t(e.dataset.i18nPh));
+    });
+    root.querySelectorAll('[title]').forEach(function(e){
+      if(e.dataset.i18nTt===undefined)e.dataset.i18nTt=e.getAttribute('title')||'';
+      e.setAttribute('title',t(e.dataset.i18nTt));
+    });
+  }
+  function setLang(l){
+    LANG=l;state.lang=l;
+    document.documentElement.setAttribute('lang',l);
+    var lb=document.getElementById('langLabel');if(lb)lb.textContent=(l==='en'?'日本語':'EN');
+    save();
+    var tc=document.getElementById('treeCanvas');if(tc)tc.innerHTML='';
+    document.getElementById('zoomLabel').textContent=t('1日 ')+px+'px';
+    setFileStatus(fileHandle?'saved':undefined);
+    renderLegend();render();applyI18n();
+  }
   var DAY=86400000;
   var DISH={
     d100:{label:'100 mm dish',short:'100mm',well:false},
@@ -595,6 +721,11 @@
     return arr;
   }
   function useMeta(label){var u=allUses().filter(function(x){return x.label===label;})[0];return u||{label:label,short:label,color:'#8b97a6'};}
+  // 保存値は日本語ラベルのまま。表示のみ翻訳（ユーザー追加分は原文）
+  function useName(label){return t(label);}
+  var EN_SHORT={'継代':'Psg','ISOGEN回収':'ISOGEN','DNA抽出':'DNA','凍結ストック':'❄Frz','その他/回収':'Other'};
+  function useShortName(label){var u=useMeta(label);return LANG==='en'?(EN_SHORT[u.label]||u.short):u.short;}
+  function dishLabel(k){return t((DISH[k]||{}).label||k);}
   function recUses(r){return Array.isArray(r.uses)?r.uses:(r.uses?[r.uses]:[]);}
   function primColor(r){var us=recUses(r);return us.length?useMeta(us[0]).color:'#8b97a6';}
   var EXP_ORDER=[3,4,5,6,7,8];
@@ -648,6 +779,7 @@
     if(!state.records)state.records=[];
     if(!state.settings)state.settings=defaultSettings();
     if(typeof state.sortMode==='string')sortMode=state.sortMode;
+    if(state.lang==='en'||state.lang==='ja')LANG=state.lang;
     if(!state.records.length)state.records=sampleData();
     normalizeState();
   }
@@ -669,6 +801,11 @@
   function todayStr(){return t2s(Date.now());}
   function addDaysStr(s,n){return t2s(d2t(s)+n*DAY);}
   var DOW=['日','月','火','水','木','金','土'];
+  var DOW_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MON_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function dowName(i){return LANG==='en'?DOW_EN[i]:DOW[i];}
+  function monName(m){return LANG==='en'?MON_EN[m]:(m+1)+'月';}
+  function t(s){if(LANG!=='en')return s;var v=EN[s];return v===undefined?s:v;}
 
   function sampleData(){
     var T=todayStr();
@@ -692,7 +829,7 @@
   function mediumShort(m){return m?(''+m).split('(')[0].trim():'';}
   function volText(r){if(r.vol==='' || r.vol==null)return '';return r.vol+' mL'+(r.perWell?'/well':'');}
   function concDisplay(r){
-    if(r.seedMode==='dilution')return '希釈 1:'+((r.dilution||r.dilution===0)?r.dilution:'?');
+    if(r.seedMode==='dilution')return t('希釈 1:')+((r.dilution||r.dilution===0)?r.dilution:'?');
     if(r.concMant===''||r.concMant==null)return '';
     return r.concMant+'×10^'+(r.concExp||DEFAULT_EXP)+' cells'+(r.perWell?'/well':'/mL');
   }
@@ -789,13 +926,13 @@
   function toggleView(){viewMode=(viewMode==='tree')?'timeline':'tree';render();}
   function updateViewBtn(){
     var b=document.getElementById('viewBtn');if(!b)return;
-    b.lastChild.nodeValue=' '+(viewMode==='tree'?'タイムライン':'系統樹')+' ';
+    b.lastChild.nodeValue=' '+t(viewMode==='tree'?'タイムライン':'系統樹')+' ';
     b.classList.toggle('primary',viewMode==='tree');b.classList.toggle('ghost',viewMode!=='tree');
   }
   function renderTree(){
     var canvas=document.getElementById('treeCanvas'),hint=document.getElementById('treeHint');
     var recs=state.records.filter(function(r){return showHidden||!r.hidden;});
-    if(!recs.length){canvas.innerHTML='';canvas.style.height='auto';hint.textContent='表示できる培養がありません。';return;}
+    if(!recs.length){canvas.innerHTML='';canvas.style.height='auto';hint.textContent=t('表示できる培養がありません。');return;}
     var map={};recs.forEach(function(r){map[r.id]=r;});
     function pars(r){return recParents(r).filter(function(p){return map[p];});}
     var depth={},visiting={};
@@ -843,7 +980,7 @@
       +'<defs><marker id="tah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--arrow)"/></marker></defs>'
       +paths+'</svg>';
     var heads='';
-    cols.forEach(function(col,d){heads+='<div class="treecol" style="left:'+colX(d)+'px">'+(d===0?'解凍 / 起点':'継代 '+d+' 代目')+'</div>';});
+    cols.forEach(function(col,d){heads+='<div class="treecol" style="left:'+colX(d)+'px">'+(d===0?t('解凍 / 起点'):(t('継代 ')+d+t(' 代目')))+'</div>';});
     canvas.innerHTML=svg+heads;
     recs.forEach(function(r){
       var p=pos[r.id],col=primColor(r);
@@ -854,17 +991,17 @@
       n.style.setProperty('--tbg','color-mix(in srgb,'+col+' 12%,transparent)');
       n.style.setProperty('--tln','color-mix(in srgb,'+col+' 38%,transparent)');
       var gcls=r.genotype==='KO'?'ko':'wt';
-      var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(u.short)+'</span>';}).join('');
+      var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(useShortName(l))+'</span>';}).join('');
       n.innerHTML='<span class="capln"></span>'
         +'<span class="n1"><span class="p">'+passLabel(r)+'</span> '+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span></span>'
-        +'<span class="n2"><span class="dishchip">'+esc((DISH[r.dish]||{}).short||r.dish)+'</span> 播種 '+esc(r.seed)+(r.harvest?(' → '+esc(r.harvest)):'')+'</span>'
+        +'<span class="n2"><span class="dishchip">'+esc((DISH[r.dish]||{}).short||r.dish)+'</span> '+t('播種 ')+esc(r.seed)+(r.harvest?(' → '+esc(r.harvest)):'')+'</span>'
         +(uchips?('<span class="n3">'+uchips+'</span>'):'');
       n.title=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
-        +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定')+'\n'
-        +'用途 '+(recUses(r).join('・')||'—')+(parentsDesc(r)?('\n継代元 '+parentsDesc(r)):'')+(r.note?('\nメモ '+r.note):'');
+        +t('播種 ')+r.seed+(r.harvest?('  →  '+t('回収予定 ')+r.harvest):('  →  '+t('回収予定 未定')))+'\n'
+        +t('用途 ')+(recUses(r).map(useName).join(LANG==='en'?', ':'・')||'—')+(parentsDesc(r)?('\n'+t('継代元 ')+parentsDesc(r)):'')+(r.note?('\n'+t('メモ')+' '+r.note):'');
       canvas.appendChild(n);
     });
-    hint.textContent='系統樹（閲覧のみ・編集不可）：左＝解凍/起点 → 右へ継代が進みます。'+recs.length+' 件 / '+(maxD+1)+' 世代。破線枠＝起点（解凍）。';
+    hint.textContent=t('系統樹（閲覧のみ・編集不可）：左＝解凍/起点 → 右へ継代が進みます。')+cnt(recs.length)+' / '+(maxD+1)+t(' 世代。破線枠＝起点（解凍）。');
   }
 
   function render(){
@@ -874,7 +1011,7 @@
     var isTree=(viewMode==='tree');
     document.getElementById('board').style.display=isTree?'none':'';
     document.getElementById('treeBoard').style.display=isTree?'':'none';
-    if(isTree){renderTree();return;}
+    if(isTree){renderTree();if(LANG!=='ja')applyI18n();return;}
     var L=computeLayout();
     var grid=document.getElementById('grid');
     document.documentElement.style.setProperty('--labelw',LABELW+'px');
@@ -910,6 +1047,7 @@
     var board=document.getElementById('board');
     var todayX=L.xOf(todayStr());
     board.scrollLeft=Math.max(0,todayX-board.clientWidth*0.55);
+    if(LANG!=='ja')applyI18n();
   }
 
   function makeCorner(){var c=document.createElement('div');c.className='corner';c.style.height=HH+'px';c.textContent='細胞 / Passage';return c;}
@@ -919,9 +1057,9 @@
     for(var d=0;d<L.totalDays;d++){
       var t=L.originT+d*DAY,dt=new Date(t),x=d*L.px,dow=dt.getDay();
       var cls='dhead'+(dow===0||dow===6?' we':'')+(dow===0?' sun':'');
-      html+='<div class="'+cls+'" style="left:'+x+'px;width:'+L.px+'px"><div class="dnum">'+dt.getDate()+'</div>'+(L.px>=26?('<div class="dow">'+DOW[dow]+'</div>'):'')+'</div>';
+      html+='<div class="'+cls+'" style="left:'+x+'px;width:'+L.px+'px"><div class="dnum">'+dt.getDate()+'</div>'+(L.px>=26?('<div class="dow">'+dowName(dow)+'</div>'):'')+'</div>';
       var mk=dt.getFullYear()+'-'+dt.getMonth();
-      if(!seen[mk]){seen[mk]=1;html+='<div class="mstrip" style="left:'+x+'px">'+(dt.getMonth()+1)+'月<span style="color:var(--ink-faint);font-weight:500"> '+dt.getFullYear()+'</span></div>';}
+      if(!seen[mk]){seen[mk]=1;html+='<div class="mstrip" style="left:'+x+'px">'+monName(dt.getMonth())+'<span style="color:var(--ink-faint);font-weight:500"> '+dt.getFullYear()+'</span></div>';}
     }
     return html;
   }
@@ -984,8 +1122,8 @@
     var target=state.records.filter(function(x){return x.id===targetId;})[0];
     if(!target)return;
     if(!Array.isArray(target.parents))target.parents=[];
-    if(target.parents.indexOf(sourceId)>=0){alert('すでにつながっています。');return;}
-    if(isAncestor(targetId,sourceId)){alert('その向きだと系譜が循環します。新しい方（子）へ向けてつないでください。');return;}
+    if(target.parents.indexOf(sourceId)>=0){alert(t('すでにつながっています。'));return;}
+    if(isAncestor(targetId,sourceId)){alert(t('その向きだと系譜が循環します。新しい方（子）へ向けてつないでください。'));return;}
     target.parents.push(sourceId);
     save();render();
   }
@@ -1030,7 +1168,7 @@
       el.className='rowlab'+(r.hidden?' hiddenrec':'');el.style.height=row.h+'px';el.style.cursor='pointer';
       el.dataset.id=r.id;
       var mc=recMC(r), mcToday=mc.indexOf(todayStr())>=0;
-      var mcTip=mc.length?('培地交換(MC): '+mc.join(', ')):'クリックで本日の培地交換(MC)を記録';
+      var mcTip=mc.length?(t('培地交換(MC): ')+mc.join(', ')):t('クリックで本日の培地交換(MC)を記録');
       el.innerHTML='<span class="cell">'+esc(r.cell)+' <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span>'
         +(r.hidden?' <span class="hidetag">非表示</span>':'')+'</span>'
         +'<span class="meta">'+dots
@@ -1061,9 +1199,9 @@
     b.tabIndex=0;
     var dish=(DISH[r.dish]||{}).short||r.dish;
     var gcls=r.genotype==='KO'?'ko':'wt';
-    var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(u.short)+'</span>';}).join('');
+    var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(useShortName(l))+'</span>';}).join('');
     var l2parts=[mediumShort(r.medium),concDisplay(r),volText(r)].filter(Boolean);
-    if(recContents(r).length)l2parts.push('内訳: '+recContents(r).join(', '));
+    if(recContents(r).length)l2parts.push(t('内訳: ')+recContents(r).join(', '));
     if(r.reagents)l2parts.push('+'+r.reagents);
     b.innerHTML='<span class="capln"></span>'
       +'<div class="inner">'
@@ -1072,20 +1210,20 @@
       +(l2parts.length?('<span class="l2">'+esc(l2parts.join(' · '))+'</span>'):'')
       +'</div>';
     var tip=r.cell+'  '+passLabel(r)+'  '+genoLabel(r)+'  ['+((DISH[r.dish]||{}).label||r.dish)+']\n'
-      +(parentsDesc(r)?('継代元 '+parentsDesc(r)+'\n'):'')
-      +'播種 '+r.seed+(r.harvest?('  →  回収予定 '+r.harvest):'  →  回収予定 未定（進行中）')+'\n'
-      +(recContents(r).length?('内訳 '+recContents(r).join(', ')+'\n'):'')
-      +'培地 '+(r.medium||'—')+'\n'
-      +'濃度 '+(concDisplay(r)||'—')+'  /  '+(volText(r)||'—')+'\n'
-      +'用途 '+(recUses(r).join('・')||'—')+(r.reagents?('\n添加 '+r.reagents):'')
-      +(recMC(r).length?('\n培地交換 '+recMC(r).join(', ')):'')+(r.note?('\nメモ '+r.note):'');
+      +(parentsDesc(r)?(t('継代元 ')+parentsDesc(r)+'\n'):'')
+      +t('播種 ')+r.seed+(r.harvest?('  →  '+t('回収予定 ')+r.harvest):('  →  '+t('回収予定 未定')))+'\n'
+      +(recContents(r).length?(t('内訳 ')+recContents(r).join(', ')+'\n'):'')
+      +t('培地 ')+(r.medium||'—')+'\n'
+      +t('濃度 ')+(concDisplay(r)||'—')+'  /  '+(volText(r)||'—')+'\n'
+      +t('用途 ')+(recUses(r).map(useName).join(LANG==='en'?', ':'・')||'—')+(r.reagents?('\n'+t('添加薬品')+' '+r.reagents):'')
+      +(recMC(r).length?('\n'+t('培地交換')+' '+recMC(r).join(', ')):'')+(r.note?('\n'+t('メモ')+' '+r.note):'');
     b.title=tip;
     // 培地交換(MC)マーカー
     recMC(r).forEach(function(m){
       var left=L.xOf(m)-x0;
       if(left<-5||left>w+5)return;
       var mk=document.createElement('span');
-      mk.className='mcmk';mk.style.left=left+'px';mk.title='培地交換(MC) '+m;
+      mk.className='mcmk';mk.style.left=left+'px';mk.title=t('培地交換(MC) ')+m;
       b.appendChild(mk);
     });
     b.onclick=function(){openForm(r.id);};
@@ -1101,7 +1239,7 @@
   function updateHiddenBtn(){
     var n=state.records.filter(function(r){return r.hidden;}).length;
     var b=document.getElementById('hiddenBtn');if(!b)return;
-    var lab=(showHidden?'非表示も表示中':'非表示')+(n?(' '+n):'');
+    var lab=t(showHidden?'非表示も表示中':'非表示')+(n?(' '+n):'');
     b.lastChild.nodeValue=' '+lab+' ';
     b.classList.toggle('primary',showHidden);b.classList.toggle('ghost',!showHidden);
   }
@@ -1109,10 +1247,10 @@
   function doPrint(what){
     document.getElementById('printMenu').classList.remove('open');
     if((what==='calendar'||what==='both')&&viewMode==='tree'){viewMode='timeline';render();}
-    var labels={today:'本日のタスク',calendar:'カレンダー（タイムライン）',both:'本日のタスク＋カレンダー'};
-    var d=taskDate||todayStr(), dow=DOW[new Date(d2t(d)).getDay()];
-    document.getElementById('printHead').innerHTML='<h1>細胞パッセージ管理 — '+esc(labels[what]||'')+'</h1>'
-      +'<div class="sub">対象日 '+esc(d)+'（'+dow+'）／印刷日 '+todayStr()+'</div>';
+    var labels={today:t('本日のタスク'),calendar:t('カレンダー（タイムライン）'),both:t('本日のタスク＋カレンダー')};
+    var d=taskDate||todayStr(), dow=dowName(new Date(d2t(d)).getDay());
+    document.getElementById('printHead').innerHTML='<h1>'+t('細胞パッセージ管理')+' — '+esc(labels[what]||'')+'</h1>'
+      +'<div class="sub">'+t('対象日 ')+esc(d)+(LANG==='en'?(' ('+dow+')'):('（'+dow+'）'))+t('／印刷日 ')+todayStr()+'</div>';
     document.body.setAttribute('data-print',what);
     var clean=function(){document.body.removeAttribute('data-print');window.removeEventListener('afterprint',clean);};
     window.addEventListener('afterprint',clean);
@@ -1137,29 +1275,29 @@
   function renderToday(){
     var el=document.getElementById('today');
     if(!taskDate)taskDate=todayStr();
-    var t=taskDate;
-    var harvL=state.records.filter(function(r){return !r.hidden&&r.harvest===t;});
-    var seedL=state.records.filter(function(r){return !r.hidden&&r.seed===t;});
+    var dayStr=taskDate;
+    var harvL=state.records.filter(function(r){return !r.hidden&&r.harvest===dayStr;});
+    var seedL=state.records.filter(function(r){return !r.hidden&&r.seed===dayStr;});
     var total=harvL.length+seedL.length;
     function itemHTML(r,kind){
       var dish=(DISH[r.dish]||{}).short||r.dish;
       var gcls=r.genotype==='KO'?'ko':'wt';
-      var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(u.short)+'</span>';}).join(' ');
-      var us=recUses(r);
+      var uchips=recUses(r).map(function(l){var u=useMeta(l);return '<span class="uchip" style="background:'+u.color+'">'+esc(useShortName(l))+'</span>';}).join(' ');
+      var us=recUses(r).map(useName);
       var r2=kind==='seed'
         ? ([mediumShort(r.medium),concDisplay(r),volText(r)].filter(Boolean).join(' · ')||'—')
-        : ('やること: '+(us.join(' ＋ ')||'回収')+(us.length>1?'（'+us.length+'件）':'')+(r.note?('  — '+r.note):''));
-      var days=Math.round((d2t(t)-d2t(r.seed))/DAY);
+        : (t('やること: ')+(us.join(LANG==='en'?' + ':' ＋ ')||t('回収'))+(us.length>1?(LANG==='en'?(' ('+us.length+')'):('（'+us.length+'件）')):'')+(r.note?('  — '+r.note):''));
+      var days=Math.round((d2t(dayStr)-d2t(r.seed))/DAY);
       var seedInfo=kind==='seed'
-        ? ('播種日 '+r.seed+'　'+(r.harvest?('回収予定 '+r.harvest):'回収予定 未定'))
-        : ('播種 '+r.seed+'（培養'+days+'日）'+(r.harvest?('　回収予定 '+r.harvest):''));
+        ? (t('播種日 ')+r.seed+'　'+(r.harvest?(t('回収予定 ')+r.harvest):t('回収予定 未定')))
+        : (t('播種 ')+r.seed+(LANG==='en'?(' (day '+days+')'):('（培養'+days+'日）'))+(r.harvest?('　'+t('回収予定 ')+r.harvest):''));
       return '<div class="titem" data-id="'+r.id+'"><div class="main">'
         +'<div class="r1">'+esc(r.cell)+' <span class="p">'+passLabel(r)+'</span> <span class="dishchip">'+esc(dish)+'</span> <span class="gt '+gcls+'">'+esc(genoLabel(r))+'</span>'
         +(uchips?(' '+uchips):'')+'</div>'
         +'<div class="r2">'+esc(r2)+'</div>'
         +'<div class="r3">'+esc(seedInfo)+'</div></div></div>';
     }
-    var dow=DOW[new Date(d2t(t)).getDay()];
+    var dow=dowName(new Date(d2t(dayStr)).getDay());
     var cols=[];
     if(harvL.length)cols.push({title:'回収 / 処理',n:harvL.length,html:harvL.map(function(r){return itemHTML(r,'harvest');}).join('')});
     if(seedL.length)cols.push({title:'播種',n:seedL.length,html:seedL.map(function(r){return itemHTML(r,'seed');}).join('')});
@@ -1168,24 +1306,25 @@
       body='<div class="tempty" style="padding:8px 2px">本日の予定はありません。</div>';
     }else{
       body='<div class="cols'+(cols.length===1?' one':'')+'">'+cols.map(function(c){
-        return '<div class="tcol"><h3>'+esc(c.title)+'<span class="n">'+c.n+' 件</span></h3>'+c.html+'</div>';
+        return '<div class="tcol"><h3>'+esc(t(c.title))+'<span class="n">'+cnt(c.n)+'</span></h3>'+c.html+'</div>';
       }).join('')+'</div>';
     }
-    var diff=Math.round((d2t(t)-d2t(todayStr()))/DAY);
-    var rel=diff===0?'本日':diff===1?'明日':diff===-1?'昨日':(diff>0?('+'+diff+'日'):(diff+'日'));
-    el.innerHTML='<h2>📋 <span class="ttl">'+rel+'のタスク</span>'
-      +'<span class="tnav"><button data-nav="-1" aria-label="前日" title="前日">◀</button>'
-      +'<span class="date">'+t+'（'+dow+'）</span>'
-      +'<button data-nav="1" aria-label="翌日" title="翌日">▶</button></span>'
-      +'<button class="todaybtn'+(diff===0?' hide':'')+'" data-today="1">本日へ</button>'
-      +'<span class="cnt">'+total+' 件</span></h2>'+body;
+    var diff=Math.round((d2t(dayStr)-d2t(todayStr()))/DAY);
+    var relJ=diff===0?'本日':diff===1?'明日':diff===-1?'昨日':(diff>0?('+'+diff+'日'):(diff+'日'));
+    var rel=(LANG==='en'&&Math.abs(diff)>1)?((diff>0?'+':'')+diff+'d'):t(relJ);
+    el.innerHTML='<h2>📋 <span class="ttl">'+(LANG==='en'?('Tasks: '+rel):(rel+'のタスク'))+'</span>'
+      +'<span class="tnav"><button data-nav="-1" aria-label="'+t('前日')+'" title="'+t('前日')+'">◀</button>'
+      +'<span class="date">'+dayStr+(LANG==='en'?(' ('+dow+')'):('（'+dow+'）'))+'</span>'
+      +'<button data-nav="1" aria-label="'+t('翌日')+'" title="'+t('翌日')+'">▶</button></span>'
+      +'<button class="todaybtn'+(diff===0?' hide':'')+'" data-today="1">'+t('本日へ')+'</button>'
+      +'<span class="cnt">'+cnt(total)+'</span></h2>'+body;
     el.querySelectorAll('[data-nav]').forEach(function(b){b.onclick=function(){taskDate=addDaysStr(taskDate,parseInt(b.getAttribute('data-nav'),10));renderToday();};});
     var tb=el.querySelector('[data-today]');if(tb)tb.onclick=function(){taskDate=todayStr();renderToday();};
     el.querySelectorAll('.titem').forEach(function(n){n.onclick=function(){openForm(n.getAttribute('data-id'));};});
   }
   function renderLegend(){
     var el=document.getElementById('legend');
-    var fates=allUses().map(function(u){return '<span class="lg"><span class="sw" style="background:'+u.color+'"></span>'+esc(u.label)+'</span>';}).join('');
+    var fates=allUses().map(function(u){return '<span class="lg"><span class="sw" style="background:'+u.color+'"></span>'+esc(useName(u.label))+'</span>';}).join('');
     var dishes=DISH_ORDER.map(function(k){return '<span class="dish">'+DISH[k].short+'</span>';}).join('');
     el.innerHTML='<span class="lab">用途</span><div class="grp">'+fates+'</div>'
       +'<span class="sep"></span><span class="lab">遺伝子型</span><div class="grp">'
@@ -1254,7 +1393,7 @@
     var chips=formMC.slice().sort().map(function(d){
       return '<span class="chip on" data-d="'+esc(d)+'">'+esc(d)+' <b style="margin-left:2px">×</b></span>';
     }).join('');
-    var addChip='<span class="chip" data-add="1">＋ 本日（'+todayStr()+'）</span>';
+    var addChip='<span class="chip" data-add="1">'+(LANG==='en'?('+ Today ('+todayStr()+')'):('＋ 本日（'+todayStr()+'）'))+'</span>';
     box.innerHTML=chips+addChip;
     box.querySelectorAll('.chip[data-d]').forEach(function(c){c.onclick=function(){var d=c.getAttribute('data-d');formMC=formMC.filter(function(x){return x!==d;});renderMcList();};});
     var a=box.querySelector('[data-add]');if(a)a.onclick=function(){var t=todayStr();if(formMC.indexOf(t)<0)formMC.push(t);renderMcList();};
@@ -1315,7 +1454,7 @@
   function openForm(id,preset){
     fillFormSelects();
     var r=id?state.records.filter(function(x){return x.id===id;})[0]:null;
-    document.getElementById('mTitle').textContent=r?'培養を編集':((preset&&preset.parents&&preset.parents.length)?'継代して培養を作成':'新規培養を追加');
+    document.getElementById('mTitle').textContent=t(r?'培養を編集':((preset&&preset.parents&&preset.parents.length)?'継代して培養を作成':'新規培養を追加'));
     document.getElementById('f_id').value=r?r.id:'';
     var data=r||preset||{cell:'',dish:'d100',passage:'',seed:todayStr(),harvest:'',genotype:'WT',gene:'',medium:(state.settings.media[0]||''),seedMode:'conc',concMant:'',concExp:DEFAULT_EXP,dilution:'',vol:'',perWell:false,reagents:'',uses:['継代'],mc:[],note:''};
     formUses=recUses(data).slice();
@@ -1350,7 +1489,8 @@
     document.getElementById('f_dupn').value=1;
     var hb=document.getElementById('mHide');
     hb.style.display=r?'inline-flex':'none';
-    if(r){hb.textContent=r.hidden?'再表示する':'非表示にする';hb.dataset.id=r.id;}
+    if(r){hb.textContent=t(r.hidden?'再表示する':'非表示にする');hb.dataset.id=r.id;}
+    if(LANG!=='ja')applyI18n(document.getElementById('scrim'));
     scrim.classList.add('open');
     setTimeout(function(){document.getElementById('f_cell').focus();},30);
   }
@@ -1388,8 +1528,8 @@
   }
   function saveForm(){
     var v=readForm();
-    if(!v.cell){alert('細胞名を入力してください。');return;}
-    if(!v.seed){alert('播種日を入力してください。');return;}
+    if(!v.cell){alert(t('細胞名を入力してください。'));return;}
+    if(!v.seed){alert(t('播種日を入力してください。'));return;}
     var id=document.getElementById('f_id').value;
     if(id){var r=state.records.filter(function(x){return x.id===id;})[0];if(r){for(var k in v)r[k]=v[k];}}
     else{v.id=uid();state.records.push(v);}
@@ -1397,7 +1537,7 @@
   }
   function deleteRec(){
     var id=document.getElementById('f_id').value;if(!id)return;
-    if(!confirm('この培養を削除しますか？'))return;
+    if(!confirm(t('この培養を削除しますか？')))return;
     state.records=state.records.filter(function(x){return x.id!==id;});
     state.records.forEach(function(x){if(Array.isArray(x.parents))x.parents=x.parents.filter(function(p){return p!==id;});});
     save();closeForm();render();
@@ -1406,7 +1546,7 @@
     if(!pid)return '';
     var p=state.records.filter(function(x){return x.id===pid;})[0];
     if(!p)return '';
-    return p.cell+' '+passLabel(p)+'（'+((DISH[p.dish]||{}).short||p.dish)+'・播種'+p.seed+'）';
+    return p.cell+' '+passLabel(p)+(LANG==='en'?(' ('+((DISH[p.dish]||{}).short||p.dish)+', seeded '+p.seed+')'):('（'+((DISH[p.dish]||{}).short||p.dish)+'・播種'+p.seed+'）'));
   }
   function passageFrom(){
     var src=state.records.filter(function(x){return x.id===document.getElementById('f_id').value;})[0];
@@ -1422,8 +1562,8 @@
   function dupRec(){
     var n=Math.max(1,Math.min(50,parseInt(document.getElementById('f_dupn').value,10)||1));
     var v=readForm();
-    if(!v.cell){alert('細胞名を入力してください。');return;}
-    if(!v.seed){alert('播種日を入力してください。');return;}
+    if(!v.cell){alert(t('細胞名を入力してください。'));return;}
+    if(!v.seed){alert(t('播種日を入力してください。'));return;}
     for(var i=0;i<n;i++){var c=JSON.parse(JSON.stringify(v));c.id=uid();c.hidden=false;state.records.push(c);}
     mergeSettingsFromRecords();save();closeForm();render();
   }
@@ -1456,9 +1596,10 @@
     var doAdd=function(){var v=input.value.trim();if(!v)return;if(state.settings[kind].indexOf(v)<0)state.settings[kind].push(v);input.value='';save();renderSettings();
       var again=document.querySelector('#'+elid+' [data-add]');if(again)again.focus();};
     document.querySelector('#'+elid+' [data-addbtn]').onclick=doAdd;
+    if(LANG!=='ja')applyI18n(document.getElementById(elid));
     input.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();doAdd();}};
   }
-  function openSettings(){renderSettings();setScrim.classList.add('open');}
+  function openSettings(){renderSettings();if(LANG!=='ja')applyI18n(setScrim);setScrim.classList.add('open');}
   function closeSettings(){setScrim.classList.remove('open');renderLegend();if(scrim.classList.contains('open')){fillFormSelects();renderReagChips();renderPlateChips();fillGeneOptions(document.getElementById('f_gene').value);}render();}
 
   // ---------- import / export ----------
@@ -1554,14 +1695,14 @@
     var el=document.getElementById('fileStatus'); if(!el)return;
     el.onclick=null; el.style.cursor='default'; el.classList.remove('act');
     if(kind==='reconnect'){
-      el.innerHTML='<span class="dotst warn"></span>'+esc(connectedName)+' <b>接続</b>';
+      el.innerHTML='<span class="dotst warn"></span>'+esc(connectedName)+' <b>'+t('接続')+'</b>';
       el.classList.add('act'); el.style.cursor='pointer'; el.onclick=reconnect; return;
     }
     if(!fileHandle){
-      el.innerHTML='<span class="dotst off"></span>未接続 <span class="sub">(ブラウザ内保存)</span>'; return;
+      el.innerHTML='<span class="dotst off"></span>'+t('未接続')+' <span class="sub">'+t('(ブラウザ内保存)')+'</span>'; return;
     }
     el.classList.add('act');
-    var map={saving:['dotst warn','保存中…'],saved:['dotst ok','自動保存'],error:['dotst err','保存失敗']};
+    var map={saving:['dotst warn',t('保存中…')],saved:['dotst ok',t('自動保存')],error:['dotst err',t('保存失敗')]};
     var m=map[kind]||map.saved;
     el.innerHTML='<span class="'+m[0]+'"></span>'+esc(connectedName)+' <span class="sub">· '+m[1]+'</span>';
   }
@@ -1622,7 +1763,7 @@
 
   // ---------- theme / zoom ----------
   function toggleTheme(){var cur=document.documentElement.getAttribute('data-theme');var isDark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',isDark?'light':'dark');}
-  function setZoom(delta){px=Math.max(18,Math.min(110,px+delta));document.getElementById('zoomLabel').textContent='1日 '+px+'px';render();}
+  function setZoom(delta){px=Math.max(18,Math.min(110,px+delta));document.getElementById('zoomLabel').textContent=t('1日 ')+px+'px';render();}
 
   // ---------- wire ----------
   document.getElementById('addBtn').onclick=function(){openForm(null);};
@@ -1653,12 +1794,17 @@
   setScrim.addEventListener('click',function(e){if(e.target===setScrim)closeSettings();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(scrim.classList.contains('open'))closeForm();else if(setScrim.classList.contains('open'))closeSettings();}});
 
+  document.getElementById('langBtn').onclick=function(){setLang(LANG==='en'?'ja':'en');};
+
   // ---------- init ----------
   load();
   document.getElementById('sortSel').value=sortMode;
+  document.documentElement.setAttribute('lang',LANG);
+  document.getElementById('langLabel').textContent=(LANG==='en'?'日本語':'EN');
   renderLegend();
   render();
   setFileStatus();
+  applyI18n();
   restoreHandle();
 })();
 </script>
