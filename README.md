@@ -4,6 +4,17 @@
 
 単一HTMLで動く細胞培養パッセージ管理ツール。タイムライン・系統樹・本日のタスクを1画面で。インストール不要・サーバー不要・アカウント不要。
 
+![Cell Passage Manager — timeline with today's tasks and passage lineage](docs/screenshot.png)
+
+<details>
+<summary>English UI / 英語表示（クリックで展開）</summary>
+
+![Cell Passage Manager in English](docs/screenshot-en.png)
+
+</details>
+
+*Sample data shown (`HeLa`, `GeneX`) — placeholders only. / 画面はサンプルデータ（`HeLa`, `GeneX`）です。*
+
 [English](#english) ・ [日本語](#日本語)
 
 ---

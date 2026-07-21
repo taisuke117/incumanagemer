@@ -813,11 +813,11 @@
     var med='RPMI1640 CM (10% FBS, Glutamax, P/S)';
     function R(o){o.medium=o.medium||med;o.genotype=o.genotype||'WT';o.gene=o.gene||'';o.perWell=!!o.perWell;o.reagents=o.reagents||'';o.note=o.note||'';o.seedMode=o.seedMode||'conc';o.concMant=(o.concMant===0||o.concMant)?o.concMant:'';o.concExp=o.concExp||DEFAULT_EXP;o.dilution=o.dilution||'';o.uses=o.uses||[];o.mc=o.mc||[];o.contents=o.contents||[];o.parent=o.parent||'';return o;}
     return [
-      R({id:'s1',cell:'HeLa',dish:'d100',passage:5,seed:rel(-14),harvest:rel(-10),concMant:1.0,concExp:6,vol:'10',uses:['継代'],note:'解凍スタート'}),
-      R({id:'s2',cell:'HeLa',dish:'d100',passage:6,seed:rel(-10),harvest:rel(-6),seedMode:'dilution',dilution:4,vol:'10',uses:['継代'],parent:'s1',note:'希釈継代'}),
-      R({id:'s3',cell:'HeLa',dish:'w6',passage:6,seed:rel(-10),harvest:rel(-7),concMant:3.0,concExp:5,vol:'2',perWell:true,reagents:'TGF-β 5 ng/mL',uses:['ISOGEN回収','DNA抽出'],parent:'s1',note:'RNA/DNA回収'}),
+      R({id:'s1',cell:'HeLa',dish:'d100',passage:5,seed:rel(-14),harvest:rel(-10),concMant:1.0,concExp:6,vol:'10',uses:['継代'],note:t('解凍スタート')}),
+      R({id:'s2',cell:'HeLa',dish:'d100',passage:6,seed:rel(-10),harvest:rel(-6),seedMode:'dilution',dilution:4,vol:'10',uses:['継代'],parent:'s1',note:t('希釈継代')}),
+      R({id:'s3',cell:'HeLa',dish:'w6',passage:6,seed:rel(-10),harvest:rel(-7),concMant:3.0,concExp:5,vol:'2',perWell:true,reagents:'TGF-β 5 ng/mL',uses:['ISOGEN回収','DNA抽出'],parent:'s1',note:t('RNA/DNA回収')}),
       R({id:'s4',cell:'HeLa',dish:'d100',passage:7,seed:rel(-6),harvest:rel(-2),concMant:1.0,concExp:6,vol:'10',uses:['凍結ストック'],parent:'s2',mc:[rel(-4)],note:'2 vials'}),
-      R({id:'s5',cell:'HeLa',dish:'w12',passage:7,seed:rel(-6),harvest:rel(0),concMant:1.5,concExp:5,vol:'1',perWell:true,genotype:'KO',gene:'GeneX',reagents:'Puromycin 1 µg/mL',uses:['継代','ISOGEN回収','DNA抽出'],parent:'s2',note:'本日回収'}),
+      R({id:'s5',cell:'HeLa',dish:'w12',passage:7,seed:rel(-6),harvest:rel(0),concMant:1.5,concExp:5,vol:'1',perWell:true,genotype:'KO',gene:'GeneX',reagents:'Puromycin 1 µg/mL',uses:['継代','ISOGEN回収','DNA抽出'],parent:'s2',note:t('本日回収')}),
       R({id:'s6',cell:'HeLa',dish:'d100',passage:8,seed:rel(0),harvest:rel(5),concMant:1.0,concExp:6,vol:'10',genotype:'KO',gene:'GeneX',uses:['継代'],parent:'s5'})
     ];
   }
@@ -1800,6 +1800,7 @@
   load();
   document.getElementById('sortSel').value=sortMode;
   document.documentElement.setAttribute('lang',LANG);
+  document.getElementById('zoomLabel').textContent=t('1日 ')+px+'px';
   document.getElementById('langLabel').textContent=(LANG==='en'?'日本語':'EN');
   renderLegend();
   render();
